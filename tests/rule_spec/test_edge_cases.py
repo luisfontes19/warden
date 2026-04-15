@@ -1,6 +1,6 @@
 import json
 
-from warden.rules_engine import Match, Rule
+from warden.engine.models import Match, Rule
 from tests.rule_spec.conftest import tmp_text
 
 

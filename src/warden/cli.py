@@ -5,12 +5,11 @@ import json
 import logging
 import os
 
+from warden.engine.rules_engine import RuleEngine
 from watchdog.events import FileSystemEvent, RegexMatchingEventHandler
 from watchdog.observers import Observer
 
 from warden.configs import Configs
-from warden.rules_engine import RuleEngine
-
 
 class _RuleHandler(RegexMatchingEventHandler):
     """Watchdog handler that enforces rules when a monitored file changes."""

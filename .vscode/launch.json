@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File (uv)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/warden/cli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "-r",
+                "docs/rule-test/rule.yml"
+            ]
+        }
+    ]
+}

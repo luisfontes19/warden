@@ -1,8 +1,10 @@
 from pathlib import Path
 
 import pytest
+from warden.engine.actions import ActionResult
+from warden.engine.models import Rule
 
-from warden.rules_engine import ActionResult, Rule
+
 from tests.rule_spec.conftest import tmp_text
 
 

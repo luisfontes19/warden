@@ -1,6 +1,7 @@
-import json
 
-from warden.rules_engine import ActionResult, Rule
+from warden.engine.actions import ActionResult
+from warden.engine.models import Rule
+
 from tests.rule_spec.conftest import tmp_text
 
 

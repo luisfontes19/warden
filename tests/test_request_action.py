@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from warden.rules_engine import (
+from warden.engine.models import (
     ActionResult,
     Rule,
     Match,
-    _build_template_context,
-    _render_value,
 )
+from warden.engine.templates import build_template_context, render_value
+
 
 
 def _make_match(**overrides) -> Match:
@@ -26,44 +26,44 @@ def _make_match(**overrides) -> Match:
 
 class TestTemplateRendering:
     def test_render_plain_string(self):
-        ctx = _build_template_context([_make_match()])
-        result = _render_value("no placeholders here", ctx)
+        ctx = build_template_context([_make_match()])
+        result = render_value("no placeholders here", ctx)
         assert result == "no placeholders here"
 
     def test_render_string_with_placeholder(self):
-        ctx = _build_template_context([_make_match(rule_id="my-rule")])
-        result = _render_value("Rule: ${{rule_id}}", ctx)
+        ctx = build_template_context([_make_match(rule_id="my-rule")])
+        result = render_value("Rule: ${{rule_id}}", ctx)
         assert result == "Rule: my-rule"
 
     def test_render_matched_content_placeholder(self):
-        ctx = _build_template_context([_make_match(matched_content="secret-key")])
-        result = _render_value("Found: ${{matched_content}}", ctx)
+        ctx = build_template_context([_make_match(matched_content="secret-key")])
+        result = render_value("Found: ${{matched_content}}", ctx)
         assert result == "Found: secret-key"
 
     def test_render_dict_values(self):
-        ctx = _build_template_context([_make_match(file="/etc/config.json")])
-        result = _render_value({"key": "file=${{file}}", "static": "no-change"}, ctx)
+        ctx = build_template_context([_make_match(file="/etc/config.json")])
+        result = render_value({"key": "file=${{file}}", "static": "no-change"}, ctx)
         assert result == {"key": "file=/etc/config.json", "static": "no-change"}
 
     def test_render_list_values(self):
-        ctx = _build_template_context([_make_match(rule_id="r1")])
-        result = _render_value(["${{rule_id}}", "literal"], ctx)
+        ctx = build_template_context([_make_match(rule_id="r1")])
+        result = render_value(["${{rule_id}}", "literal"], ctx)
         assert result == ["r1", "literal"]
 
     def test_render_nested_structure(self):
-        ctx = _build_template_context([_make_match(description="alert")])
-        result = _render_value({"outer": {"inner": "${{description}}"}}, ctx)
+        ctx = build_template_context([_make_match(description="alert")])
+        result = render_value({"outer": {"inner": "${{description}}"}}, ctx)
         assert result == {"outer": {"inner": "alert"}}
 
     def test_non_string_passthrough(self):
-        ctx = _build_template_context([_make_match()])
-        assert _render_value(42, ctx) == 42
-        assert _render_value(None, ctx) is None
-        assert _render_value(True, ctx) is True
+        ctx = build_template_context([_make_match()])
+        assert render_value(42, ctx) == 42
+        assert render_value(None, ctx) is None
+        assert render_value(True, ctx) is True
 
 
 class TestRequestAction:
-    @patch("warden.rules_engine.requests.request")
+    @patch("warden.engine.actions.requests.request")
     def test_basic_post_request(self, mock_request: MagicMock):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -93,7 +93,7 @@ class TestRequestAction:
             timeout=30,
         )
 
-    @patch("warden.rules_engine.requests.request")
+    @patch("warden.engine.actions.requests.request")
     def test_request_with_placeholders(self, mock_request: MagicMock):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -127,7 +127,7 @@ class TestRequestAction:
         assert body["text"] == "Violation in /etc/config.json: leaked-secret"
         assert body["rule"] == "alert-rule"
 
-    @patch("warden.rules_engine.requests.request")
+    @patch("warden.engine.actions.requests.request")
     def test_request_default_method_is_post(self, mock_request: MagicMock):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -142,7 +142,7 @@ class TestRequestAction:
         rule.apply_actions([_make_match()])
         assert mock_request.call_args.kwargs["method"] == "POST"
 
-    @patch("warden.rules_engine.requests.request")
+    @patch("warden.engine.actions.requests.request")
     def test_request_with_string_body(self, mock_request: MagicMock):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -163,7 +163,7 @@ class TestRequestAction:
         call_kwargs = mock_request.call_args.kwargs
         assert call_kwargs["data"] == "plain text body about test"
 
-    @patch("warden.rules_engine.requests.request")
+    @patch("warden.engine.actions.requests.request")
     def test_request_get_method(self, mock_request: MagicMock):
         mock_response = MagicMock()
         mock_response.status_code = 200

@@ -1,4 +1,5 @@
-from warden.rules_engine import Rule
+from warden.engine.models import Rule
+
 from tests.rule_spec.conftest import tmp_text, tmp_json, tmp_binary
 
 

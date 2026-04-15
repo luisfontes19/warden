@@ -8,7 +8,7 @@ from pathlib import Path
 import traceback
 from typing import Any
 
-from warden.rules_engine import ActionResult, RuleFile, Match
+from warden.engine.models import ActionResult, RuleFile, Match
 
 RULES_DIR = Path(__file__).parent / "rules"
 
