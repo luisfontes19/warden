@@ -1,46 +1,61 @@
 
 
 import argparse
-import asyncio
 import json
 import logging
 import os
 
+from watchdog.events import FileSystemEvent, RegexMatchingEventHandler
+from watchdog.observers import Observer
+
 from warden.configs import Configs
 from warden.rules_engine import RuleEngine
 
+
+class _RuleHandler(RegexMatchingEventHandler):
+    """Watchdog handler that enforces rules when a monitored file changes."""
+
+    def __init__(self, rule_engine: RuleEngine, regexes: list[str]) -> None:
+        super().__init__(regexes=regexes)
+        self.rule_engine = rule_engine
+
+    def on_modified(self, event: FileSystemEvent) -> None:
+        path = os.path.realpath(event.src_path)
+        logging.info("%s changed", path)
+        self.rule_engine.enforce(str(path))
+
+    on_created = on_modified
+
+
 class Cli:
 
-    def __init__(self,
-                 rule_files: list[str] | None = None
-        ) -> None:
-
+    def __init__(self, rule_files: list[str] | None = None) -> None:
         self.rule_engine = RuleEngine(rule_files=rule_files)
 
-    async def handle_changes(self, file_changed: str) -> None:
-        logging.info(f"{file_changed} changed", )
-        self.rule_engine.enforce(file_changed)
-
-
-    async def loop(self) -> None:
-        files: list[str] = self.rule_engine.monitoring_files()
+    def loop(self) -> None:
+        files = self.rule_engine.monitoring_files()
         logging.info("Monitoring files: %s", json.dumps(files))
 
-        mod_time: dict[str, float] = {}
+        watched_files = {os.path.realpath(f) for f in files}
+        regexes = [ "^" + f + "$" for f in watched_files]
+        dirs_to_watch = {os.path.dirname(f) for f in watched_files}
 
-        while True:
+        handler = _RuleHandler(self.rule_engine, regexes)
+        observer = Observer()
+        for d in dirs_to_watch:
+            observer.schedule(handler, d, recursive=False)
 
-            for path in files:
-                try:
-                    mtime = os.path.getmtime(path)
-                except FileNotFoundError:
-                    mtime = 0.0
 
-                if mtime != mod_time.get(path, 0.0):
-                    mod_time[path] = mtime
-                    await self.handle_changes(path)
+        observer.start()
 
-            await asyncio.sleep(Configs.configs.interval)
+        try:
+            while observer.is_alive():
+                observer.join(timeout=1)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            observer.stop()
+            observer.join()
 
 
 def main() -> None:
@@ -57,7 +72,7 @@ def main() -> None:
 
     Configs.load_configs()
     cli = Cli(rule_files=args.rule_files or None)
-    asyncio.run(cli.loop())
+    cli.loop()
 
 
 if __name__ == "__main__":
