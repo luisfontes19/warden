@@ -1,0 +1,7 @@
+version: 1
+rules:
+  - id: Contains blacklsited works
+    file:
+      - "dummy"
+    filetype: "text"
+    code: code.py

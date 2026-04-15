@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  GREETING: Hello, world!
+
+tasks:
+  default:
+    desc: Execute on file changes
+    watch: true
+    sources:
+      - "**/*.py"
+    cmds:
+      - uv run src/warden/cli.py
+    silent: true
+
+  test:
+    desc: Run tests
+    cmds:
+      - echo "Running tests..."
+      - uv run pytest
+
+  test-rules:
+    desc: Run rule tests
+    cmds:
+      - echo "Running rule tests..."
+      #- uv run pytest tests/rules.test.py -v -s 2>&1
+      - uv run python tests/rules.py

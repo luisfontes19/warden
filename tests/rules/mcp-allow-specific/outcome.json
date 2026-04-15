@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "youtube": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "github:anaisbetts/mcp-youtube"
+            ]
+        }
+    }
+}

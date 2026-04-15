@@ -1,0 +1,4 @@
+- prevent infinite loops of edit and scan (also with external tools editing)
+- globs
+- test the actions
+- the enforce method may save a file multiple times to get all the rules applied

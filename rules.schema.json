@@ -1,0 +1,223 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://github.com/luisfontes19/warden/rules.schema.json",
+    "title": "Warden Rules File",
+    "type": "object",
+    "required": [
+        "rules"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "version": {
+            "type": "integer",
+            "description": "Schema version of this rules file."
+        },
+        "rules": {
+            "type": "array",
+            "description": "List of rules to evaluate.",
+            "items": {
+                "$ref": "#/$defs/rule"
+            }
+        }
+    },
+    "$defs": {
+        "rule": {
+            "type": "object",
+            "required": [
+                "id",
+                "file"
+            ],
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "Unique identifier for this rule."
+                },
+                "file": {
+                    "description": "Path(s) to the file(s) this rule inspects. Accepts a single string or an array of strings.",
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "minItems": 1
+                        }
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Human-readable explanation of what this rule detects."
+                },
+                "filetype": {
+                    "type": "string",
+                    "enum": [
+                        "json",
+                        "text",
+                        "binary"
+                    ],
+                    "description": "Force a specific parser. If omitted the extension of 'file' is used; unknown extensions fall back to plain text. 'binary' loads raw bytes; 'text' loads UTF-8 string; 'json' parses as JSON."
+                },
+                "patterns": {
+                    "description": "Pattern or list of patterns to evaluate against the file content. A list is treated as an implicit AND.",
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/patternNode"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/$defs/patternNode"
+                            },
+                            "minItems": 1
+                        }
+                    ]
+                },
+                "actions": {
+                    "type": "array",
+                    "description": "Actions to apply to the file when this rule matches. Text files support delete/replace/add; JSON files support replace only.",
+                    "items": {
+                        "$ref": "#/$defs/actionNode"
+                    },
+                    "minItems": 1
+                },
+                "code": {
+                    "type": "string",
+                    "description": "Path to a Python file relative to the rules directory. The file must expose a handler(filename, match) function that is called when this rule matches. Cannot traverse outside the rules directory."
+                }
+            }
+        },
+        "patternNode": {
+            "type": "object",
+            "description": "A single pattern node. Exactly one key must be present.",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+                "jq": {
+                    "type": "string",
+                    "description": "A jq expression evaluated against the parsed file content. Matches when the result is truthy."
+                },
+                "contains": {
+                    "description": "Matches when the content contains this value. For strings: substring check. For arrays/objects: membership check.",
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                    ]
+                },
+                "equals": {
+                    "description": "Matches when the content is strictly equal to this value.",
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "object",
+                        "array",
+                        "null"
+                    ]
+                },
+                "not-equals": {
+                    "description": "Matches when the content is not strictly equal to this value.",
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "object",
+                        "array",
+                        "null"
+                    ]
+                },
+                "not-contains": {
+                    "description": "Matches when the content does not contain this value. Mirror of 'contains'.",
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                    ]
+                },
+                "match": {
+                    "type": "string",
+                    "description": "A Python regex (re.search) applied to the string representation of the content. Matches when found; matched_content is set to the matched substring."
+                },
+                "or": {
+                    "type": "array",
+                    "description": "Matches when at least one sub-pattern matches.",
+                    "items": {
+                        "$ref": "#/$defs/patternNode"
+                    },
+                    "minItems": 1
+                },
+                "and": {
+                    "type": "array",
+                    "description": "Matches when all sub-patterns match.",
+                    "items": {
+                        "$ref": "#/$defs/patternNode"
+                    },
+                    "minItems": 1
+                },
+                "exists": {
+                    "type": "null",
+                    "description": "Matches when the file exists on disk. Takes no value."
+                },
+                "not-exists": {
+                    "type": "null",
+                    "description": "Matches when the file does not exist on disk. Takes no value."
+                }
+            }
+        },
+        "actionNode": {
+            "type": "object",
+            "description": "A single action node. Exactly one key must be present.",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+                "delete": {
+                    "type": "null",
+                    "description": "Text only. Removes all occurrences of the matched content from the file."
+                },
+                "replace": {
+                    "description": "Text: replaces matched content with the given string. JSON: replaces file content via 'str' (raw JSON string) or 'jq' (jq expression).",
+                    "oneOf": [
+                        {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "description": "Replacement string (text files). Use an empty string or null to replace with nothing."
+                        },
+                        {
+                            "type": "object",
+                            "description": "JSON replacement. Provide exactly one of 'str' or 'jq'.",
+                            "minProperties": 1,
+                            "maxProperties": 1,
+                            "additionalProperties": false,
+                            "properties": {
+                                "str": {
+                                    "type": "string",
+                                    "description": "A JSON string to write as the new file content."
+                                },
+                                "jq": {
+                                    "type": "string",
+                                    "description": "A jq expression applied to the current file content. The result is written back as JSON."
+                                }
+                            }
+                        }
+                    ]
+                },
+                "add": {
+                    "type": "string",
+                    "description": "Text only. Appends the given string at the end of the file."
+                },
+                "delete-file": {
+                    "type": "null",
+                    "description": "Deletes the matched file from disk. Takes no value."
+                }
+            }
+        }
+    }
+}

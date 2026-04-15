@@ -1,0 +1,11 @@
+version: 1
+rules:
+  - id: Reports non approved mcps
+    file:
+      - "dummy"
+    filetype: "json"
+    patterns:
+      - jq: |
+          .mcpServers |= with_entries(select(.value.args // [] | contains(["github:anaisbetts/mcp-youtube"])))
+    actions:
+      - replace:

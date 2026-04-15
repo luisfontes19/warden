@@ -1,0 +1,17 @@
+version: 1
+rules:
+  - id: delete-if-exists
+    file: "dummy"
+    filetype: text
+    patterns:
+      - exists:
+    actions:
+      - delete-file:
+
+  - id: confirm-not-exists
+    file: "dummy"
+    filetype: text
+    patterns:
+      - not-exists:
+    actions:
+      - add: "file was deleted\n"

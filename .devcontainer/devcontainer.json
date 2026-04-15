@@ -1,0 +1,54 @@
+{
+    "name": "Warden",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "remoteUser": "root",
+    "postCreateCommand": "uv sync --all-groups",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "github.copilot",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "ms-python.isort",
+                "streetsidesoftware.code-spell-checker",
+                "ms-python.vscode-pylance",
+                "redhat.vscode-yaml",
+                "tamasfe.even-better-toml",
+                "luisfontes19.watchtower" // DO NOT REMOVE OR DISABLE THIS EXTENSION
+            ],
+            "settings": {
+                "[python]": {
+                    "editor.formatOnType": true
+                },
+                "python.analysis.importFormat": "relative",
+                "python.analysis.autoSearchPaths": false,
+                "python.analysis.autoImportCompletions": true,
+                "python.analysis.languageServerMode": "full",
+                "python.analysis.typeCheckingMode": "basic",
+                "editor.suggestSelection": "first",
+                "editor.tabSize": 4,
+                "editor.formatOnPaste": true,
+                "editor.formatOnSave": true,
+                "editor.inlineSuggest.enabled": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": "always"
+                },
+                // =====================================
+                // !!! DO NOT EDIT THE NEXT SETTINGS !!!
+                // =====================================
+                "editor.unicodeHighlight.invisibleCharacters": true, // Defense against invisible code attacks
+                "editor.unicodeHighlight.ambiguousCharacters": true, // Defense against homograph attacks
+                "editor.unicodeHighlight.includeComments": true, // Include comments in unicode highlighting to avoid trojansource attacks
+                "editor.unicodeHighlight.includeStrings": true, // Include strings in unicode highlighting to avoid trojansource and invisible code attacks
+                "chat.plugins.enabled": false, // We are not there yet
+                "chat.mcp.autostart": "never", // Prevent MCP/Tool Poisoning attacks when editor is opened. We will add controls on top
+                "chat.extensionTools.enabled": false, // Do not accept extensions that change the AI features, needs more research
+                "chat.useClaudeHooks": true,
+                "chat.useCustomAgentHooks": false // This is a 'stealthy' way of adding hooks through agent files. Use the hooks.json file instead :)
+            }
+        }
+    }
+}

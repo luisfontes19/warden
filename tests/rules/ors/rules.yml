@@ -1,0 +1,13 @@
+version: 1
+rules:
+  - id: Contains blacklsited works
+    file:
+      - "dummy"
+    filetype: "text"
+    patterns:
+      - or:
+          - contains: pariatur
+          - contains: velit
+    actions:
+      - replace: FOO
+      - add: "this is an addition\n"

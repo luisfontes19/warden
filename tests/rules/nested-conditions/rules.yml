@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - id: Reports non approved mcps
+    file:
+      - "dummy"
+    filetype: "text"
+    patterns:
+      - and:
+          - and:
+              - contains: magna
+              - contains: anim
+          - contains: pariatur
+    actions:
+      - replace: FOO

@@ -1,0 +1,21 @@
+{
+    "mcpServers": {
+        "brave-search": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-brave-search"
+            ],
+            "env": {
+                "BRAVE_API_KEY": "your-brave-api-key-here"
+            }
+        },
+        "youtube": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "github:anaisbetts/mcp-youtube"
+            ]
+        }
+    }
+}
