@@ -8,7 +8,7 @@ from pathlib import Path
 import traceback
 from typing import Any
 
-from warden.rules_engine import CODE_HANDLED, FILE_DELETED, RuleFile, RuleMatch
+from warden.rules_engine import ActionResult, RuleFile, Match
 
 RULES_DIR = Path(__file__).parent / "rules"
 
@@ -70,27 +70,31 @@ def run_scenario(rule_dir: Path) -> bool:
         result_from_actions = False
 
         for rule in rules:
-            match: RuleMatch | None = rule.evaluate_against_file(str(tmp_path))
+            matches: list[Match] = rule.evaluate_against_file(str(tmp_path))
 
-            if match is None:
+            if not matches:
                 print(f"  ⬜ {rule.rule_id!r}  — no match")
                 continue
 
-            print(f"  🎯 {rule.rule_id!r}")
+            print(f"  🎯 {rule.rule_id!r}  ({len(matches)} match(es))")
             if rule.description:
                 print(f"      desc    : {rule.description}")
-            print(f"      content : {_fmt(match.matched_content)}")
+            for m in matches:
+                print(f"      content : {_fmt(m.matched_content)}")
 
-            new_content = rule.apply_actions(match)
+            new_content = rule.apply_actions(matches)
 
-            if new_content == FILE_DELETED:
-                print(f"      ⚙️  delete-file action → file deleted")
-                tmp_path.unlink(missing_ok=True)
-                result = FILE_DELETED
-                result_from_actions = True
-            elif new_content == CODE_HANDLED:
-                print(f"      ⚙️  code handler invoked → reading file result")
-                result = tmp_path.read_text(encoding="utf-8") if tmp_path.exists() else FILE_DELETED
+            if isinstance(new_content, ActionResult):
+                if new_content is ActionResult.FILE_DELETED:
+                    print(f"      ⚙️  delete-file action → file deleted")
+                    tmp_path.unlink(missing_ok=True)
+                    result = ActionResult.FILE_DELETED
+                elif new_content is ActionResult.CODE_HANDLED:
+                    print(f"      ⚙️  code handler invoked → reading file result")
+                    result = tmp_path.read_text(encoding="utf-8") if tmp_path.exists() else ActionResult.FILE_DELETED
+                elif new_content is ActionResult.REQUEST_SENT:
+                    print(f"      ⚙️  request action sent → reading file result")
+                    result = tmp_path.read_text(encoding="utf-8") if tmp_path.exists() else ActionResult.FILE_DELETED
                 result_from_actions = True
             elif new_content is not None:
                 print(f"      ⚙️  actions applied → result updated")
@@ -99,7 +103,8 @@ def run_scenario(rule_dir: Path) -> bool:
                 result_from_actions = True
             else:
                 print(f"      ℹ️  no actions — using matched_content as result")
-                result = match.matched_content
+                contents = [m.matched_content for m in matches]
+                result = contents[0] if len(contents) == 1 else contents
 
         if result is None:
             print(f"\n  ❌ no rule produced a result")

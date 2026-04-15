@@ -8,7 +8,7 @@ description: Use this Skill every time you need to change something in the rule 
 When changing logic in the rule engine you need to:
 
 - Update the schema file in `rules.schema.json`
-- Create or update test files for the use case. (read bellow how these tests work)
+- Create or update code-rule tests for the use case. (read bellow how these tests work)
 - Update the rules documentation in `docs/rules.md` if necessary.
 
 

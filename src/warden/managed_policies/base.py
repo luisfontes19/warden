@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from asyncio.log import logger
 import base64
 import io
-import urllib.request
+import requests
 import zipfile
 from pathlib import Path
 
@@ -63,8 +63,9 @@ class ManagedPolicyHandler(ABC):
         url_rules_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310
-                zip_data = response.read()
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            zip_data = response.content
         except Exception as exc:
             logger.error("Failed to download rules from %s: %s", url, exc)
             return None

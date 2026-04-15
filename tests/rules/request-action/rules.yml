@@ -1,0 +1,18 @@
+version: 1
+rules:
+  - id: notify-on-forbidden-word
+    description: Sends a request when a forbidden word is found
+    file:
+      - "dummy"
+    filetype: "text"
+    patterns:
+      - contains: "pariatur"
+    actions:
+      - request:
+          url: "https://warden-tests.requestcatcher.com"
+          method: POST
+          headers:
+            Content-Type: application/json
+            X-Rule-Id: "${{rule_id}}"
+          body: |
+            {"rule": "${{rule_id}}", "file": "${{matches[0].file}}", "matched": "${{matched_content}}", "all_matches": ${{json(matches)}}}

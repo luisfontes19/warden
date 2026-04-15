@@ -83,10 +83,6 @@
                         "$ref": "#/$defs/actionNode"
                     },
                     "minItems": 1
-                },
-                "code": {
-                    "type": "string",
-                    "description": "Path to a Python file relative to the rules directory. The file must expose a handler(filename, match) function that is called when this rule matches. Cannot traverse outside the rules directory."
                 }
             }
         },
@@ -216,6 +212,46 @@
                 "delete-file": {
                     "type": "null",
                     "description": "Deletes the matched file from disk. Takes no value."
+                },
+                "code": {
+                    "type": "string",
+                    "description": "Path to a Python file relative to the rules directory. The file must expose a handler(filename) function that is called when this rule matches. Cannot traverse outside the rules directory."
+                },
+                "request": {
+                    "type": "object",
+                    "description": "Sends an HTTP request. Supports Jinja2 placeholders with ${{}} syntax in all string fields. Available variables: rule_id, description, file, matched_content, file_content.",
+                    "required": [
+                        "url"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "The URL to send the request to. Supports ${{}} placeholders."
+                        },
+                        "method": {
+                            "type": "string",
+                            "enum": [
+                                "GET",
+                                "POST",
+                                "PUT",
+                                "PATCH",
+                                "DELETE"
+                            ],
+                            "description": "HTTP method. Defaults to POST."
+                        },
+                        "headers": {
+                            "type": "object",
+                            "description": "HTTP headers as key-value pairs. Values support ${{}} placeholders.",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "body": {
+                            "type": "string",
+                            "description": "Request body sent as raw data. Supports ${{}} placeholders."
+                        }
+                    }
                 }
             }
         }

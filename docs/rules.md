@@ -32,8 +32,11 @@ look for, and what to do when a match is found.
    4.3 [add (text)](#43-add-text)
    4.4 [replace (JSON)](#44-replace-json)
    4.5 [delete-file](#45-delete-file)
-5. [matched_content](#5-matched_content)
-6. [Complete examples](#6-complete-examples)
+   4.6 [code](#46-code)
+   4.7 [request](#47-request)
+5. [Placeholders](#5-placeholders)
+6. [matched_content](#6-matched_content)
+7. [Complete examples](#7-complete-examples)
 
 ---
 
@@ -136,7 +139,8 @@ patterns:
   - match: "FIXME|HACK"
 ```
 
-When `patterns` is omitted the rule never matches.
+When `patterns` is omitted the rule always matches — actions run unconditionally
+for the target file(s).
 
 ---
 
@@ -453,7 +457,113 @@ actions:
 
 ---
 
-## 5. `matched_content`
+### 4.6 `code`
+
+Invokes a custom Python handler. The value is a path to a Python file relative
+to the rules directory. The file must expose a `handler(filename)` function.
+The handler receives the path to the matched file and can read / modify it
+freely.
+
+The code path cannot traverse outside the rules directory (path-traversal
+attempts raise an error).
+
+```yaml
+actions:
+  - code: my_handler.py
+```
+
+Example handler (`my_handler.py`):
+
+```python
+def handler(filename):
+    with open(filename, encoding="utf-8") as f:
+        content = f.read()
+    content = content.replace("bad", "good")
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(content)
+```
+
+---
+
+### 4.7 `request`
+
+Sends an HTTP request. Useful for notifying external systems (webhooks, Slack,
+PagerDuty, etc.) when a rule matches.
+
+The value is an object with the following fields:
+
+| Field     | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `url`     | **yes**  | —       | The URL to send the request to. |
+| `method`  | no       | `POST`  | HTTP method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). |
+| `headers` | no       | `{}`    | HTTP headers as key-value pairs. |
+| `body`    | no       | —       | Request body sent as a string. Supports `${{}}` placeholders. |
+
+All string values support **[placeholders](#5-placeholders)**.
+
+```yaml
+actions:
+  - request:
+      url: https://hooks.slack.com/services/T00/B00/xxx
+      method: POST
+      headers:
+        Content-Type: application/json
+      body: '{"text": "Rule ${{rule_id}} triggered on ${{file}}", "matched": "${{matched_content}}"}'
+```
+
+---
+
+## 5. Placeholders
+
+Action fields that accept strings can contain **placeholders** using the
+`${{…}}` syntax (Jinja2 under the hood). Placeholders are resolved at
+execution time with data from the current match.
+
+### Available variables
+
+| Variable          | Description |
+|-------------------|-------------|
+| `rule_id`         | The `id` of the matched rule. |
+| `description`     | The rule's `description` field (may be empty). |
+| `file`            | The path to the matched file. |
+| `file_content`    | The full file content (parsed object for JSON, string for text). |
+| `matches`         | List of all `Match` objects. Each has `.rule_id`, `.description`, `.file`, `.matched_content`, `.file_content`. |
+
+### Available functions
+
+| Function    | Description |
+|-------------|-------------|
+| `json(val)` | Serialise any value to a JSON string. Works with `matches`, a single `Match`, or any other value. |
+
+### Examples
+
+```yaml
+# Simple string interpolation
+body: "Alert: ${{rule_id}} found ${{matched_content}} in ${{file}}"
+
+# Access individual matches
+body:
+  first: "${{matches[0].matched_content}}"
+  file: "${{matches[0].file}}"
+
+# Serialise all matches to JSON
+body:
+  text: "Violations found"
+  details: "${{json(matches)}}"
+
+# Inside nested objects
+body:
+  channel: "#security"
+  text: "Violation detected by ${{rule_id}}"
+  file: "${{file}}"
+```
+
+Placeholders are currently supported in the `request` action. Other actions
+may gain placeholder support in the future.
+
+---
+
+## 6. `matched_content`
 
 `matched_content` is the value that pattern evaluation "bubbles up" and is
 used by actions as the target to delete/replace. The table below summarises
@@ -474,7 +584,7 @@ what each pattern sets it to:
 
 ---
 
-## 6. Complete examples
+## 7. Complete examples
 
 ### Detect and remove a blacklisted word in a text file
 

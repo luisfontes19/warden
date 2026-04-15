@@ -2,3 +2,4 @@
 - globs
 - test the actions
 - the enforce method may save a file multiple times to get all the rules applied
+- test what happens when the change it a file delete
