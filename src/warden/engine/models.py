@@ -113,7 +113,8 @@ class Rule:
             content = path
             file_content = None
 
-        matched, extracted = match_patterns(self.patterns, content)
+        filetype = resolve_filetype(path, self.filetype)
+        matched, extracted = match_patterns(self.patterns, content, filetype)
         if not matched:
             return []
 

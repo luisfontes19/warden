@@ -24,8 +24,9 @@ look for, and what to do when a match is found.
    3.6 [jq](#36-jq)
    3.7 [or](#37-or)
    3.8 [and](#38-and)
-   3.9 [exists](#39-exists)
-   3.10 [not-exists](#310-not-exists)
+   3.9 [nested](#39-nested)
+   3.10 [exists](#310-exists)
+   3.11 [not-exists](#311-not-exists)
 4. [Action nodes](#4-action-nodes)
    4.1 [delete (text)](#41-delete-text)
    4.2 [replace (text)](#42-replace-text)
@@ -311,7 +312,29 @@ patterns:
 
 ---
 
-### 3.9 `exists`
+### 3.9 `nested`
+
+Chains patterns so that each pattern's match is re-parsed and fed as input to
+the next pattern. This is useful when you need to extract a value (e.g. with
+`jq`) and then run further checks on that extracted value.
+
+Between each step, the matched content is re-parsed using the same parser as the
+file's `filetype` (e.g. JSON files are parsed as JSON). If parsing fails, the
+value falls back to a plain string so the chain can continue.
+
+```yaml
+# Extract the blocked server's first arg, then check it contains "evil"
+patterns:
+  - nested:
+      - jq: '.servers.blocked.args[0]'
+      - contains: evil
+```
+
+`matched_content` is the result of the **last** pattern in the chain.
+
+---
+
+### 3.10 `exists`
 
 Matches when the **file itself exists** on disk. Takes no value.
 Useful for triggering actions (such as `delete-file`) whenever a watched file
@@ -324,7 +347,7 @@ patterns:
 
 ---
 
-### 3.10 `not-exists`
+### 3.11 `not-exists`
 
 Inverse of `exists`. Matches when the file does **not** exist on disk.
 

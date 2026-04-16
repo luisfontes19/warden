@@ -155,6 +155,14 @@
                     },
                     "minItems": 1
                 },
+                "nested": {
+                    "type": "array",
+                    "description": "Chains patterns: each pattern's match is re-parsed and fed as input to the next pattern. Useful for extracting a value and then matching against it.",
+                    "items": {
+                        "$ref": "#/$defs/patternNode"
+                    },
+                    "minItems": 1
+                },
                 "exists": {
                     "type": "null",
                     "description": "Matches when the file exists on disk. Takes no value."

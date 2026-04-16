@@ -41,7 +41,7 @@ class TestJq:
         data = {"servers": {"a": {"bad": True}, "b": {"bad": True}, "c": {"bad": False}}}
         path = tmp_json(data)
         rule = Rule(rule_id="jq7", files=[path], patterns=[
-            {"jq": '[.servers | to_entries[] | select(.value.bad) | .key]'},
+            {"jq": '.servers | to_entries[] | select(.value.bad) | .key'},
         ])
         matches = rule.evaluate()
         assert len(matches) == 2

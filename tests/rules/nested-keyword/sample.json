@@ -1,0 +1,16 @@
+{
+    "servers": {
+        "allowed": {
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-github"
+            ]
+        },
+        "blocked": {
+            "command": "npx",
+            "args": [
+                "@evil/mcp-server"
+            ]
+        }
+    }
+}

@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: nested-keyword-test
+    file:
+      - "dummy"
+    filetype: "json"
+    patterns:
+      - nested:
+          - jq: ".servers.blocked.args[0]"
+          - contains: evil
