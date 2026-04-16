@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import base64
 import logging
 from pathlib import Path
+
+import yaml
 
 from warden.configs import Configs, Path
 from warden.engine.actions import ActionResult
@@ -21,6 +24,7 @@ class RuleEngine:
     def _load_all(self) -> None:
         self.rules = []
         self.rules.extend(self._load_rules_from_folder(Configs.instance.rules_dir))
+        self.rules.extend(self._load_inline_rules())
         if self.folder:
             self.rules.extend(self._load_rules_from_folder(self.folder))
         for f in (self.rule_files or []):
@@ -47,6 +51,27 @@ class RuleEngine:
         rules: list[Rule] = []
         for yml in Path(folder).glob("*.yml"):
             rules.extend(self._load_rules_from_file(yml))
+        return rules
+
+    @staticmethod
+    def _load_inline_rules() -> list[Rule]:
+        handler = Configs.instance.policyHandler
+        if not handler.inline_rules:
+            return []
+
+        rules: list[Rule] = []
+        for idx, encoded in enumerate(handler.inline_rules):
+            try:
+                content = base64.b64decode(encoded).decode("utf-8")
+                data = yaml.safe_load(content)
+                if not data or "rules" not in data:
+                    continue
+                for r in data["rules"]:
+                    rules.append(Rule.from_dict(r))
+            except Exception as exc:
+                logging.error("Error loading inline rule %d: %s", idx, exc)
+
+        logging.info("Loaded %d inline rule(s) from managed policy", len(rules))
         return rules
 
     def _rules_for_file(self, file: str) -> list[Rule]:

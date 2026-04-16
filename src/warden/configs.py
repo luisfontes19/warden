@@ -28,6 +28,14 @@ class Configs:
             self.refresh_interval = 5
 
 
+    def log_configs(self) -> None:
+        logging.debug(f"[Config Debug]App data directory: {self.app_data_dir}")
+        logging.debug(f"[Config Debug]Rules directory: {self.rules_dir}")
+        logging.debug(f"[Config Debug]Rules URL: {self.rules_url}")
+        logging.debug(f"[Config Debug]Allow code rules: {self.allow_code_rules}")
+        logging.debug(f"[Config Debug]Thread timeout: {self.thread_timeout} seconds")
+        logging.debug(f"[Config Debug]Policy refresh interval: {self.refresh_interval} seconds")
+
     @staticmethod
     def load_configs() -> Configs:
         import platform

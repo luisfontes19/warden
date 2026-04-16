@@ -22,10 +22,8 @@ class LinuxPolicyHandler(ManagedPolicyHandler):
         logging.info("Initializing LinuxPolicyHandler")
         self.parse()
 
-        if self.has_policy:
-            self._extract_inline_rules()
-            if self.rules_url:
-                self._download_rules(self.rules_url)
+        if self.has_policy and self.rules_url:
+            self._download_rules(self.rules_url)
 
     def parse(self) -> None:
         if not POLICY_PATH.exists():

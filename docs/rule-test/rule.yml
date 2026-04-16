@@ -8,16 +8,4 @@ rules:
     patterns:
       - contains: "asd"
     actions:
-      - request:
-          url: "https://warden-tests.requestcatcher.com"
-          method: POST
-          headers:
-            Content-Type: application/json
-            X-Rule-Id: "${{rule_id}}"
-          body:
-            rule: "${{rule_id}}"
-            file: "${{file}}"
-            matched: "${{matched_content}}"
-            description: "${{description}}"
-            first_match_file: "${{matches[0].file}}"
-            all_matches: "${{json(matches)}}"
+      - replace: bananas

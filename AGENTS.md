@@ -5,8 +5,12 @@ For example, if an mcp.json file sets some mcp servers that are not allowed by t
 
 Project uses `uv` for managing dependencies and taskfile to manage tasks/scripts.
 
-To run the rules test just run `task test-rules` from the root of the project. This will run all the tests in `tests/rules`.
 
+## Useful commands
+
+- `uv sync` to install dependencies
+- `task test` to run all tests
+- `task test:rules` to run only the rules tests
 
 ## Coding instructions
 

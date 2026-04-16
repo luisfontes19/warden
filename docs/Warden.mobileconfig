@@ -18,8 +18,10 @@
 								<array/>
 								<key>rules-url</key>
 								<string></string>
-								<key>interval</key>
-								<integer>2</integer>
+								<key>allow-code-rules</key>
+								<false/>
+								<key>refresh-interval</key>
+								<integer>0</integer>
 							</dict>
 						</dict>
 					</array>

@@ -122,7 +122,7 @@ def _cmd_test(args: argparse.Namespace) -> None:
         print(m)
 
 
-def _start_refresh_thread(engine: RuleEngine, observer: Observer) -> threading.Thread | None:
+def _start_refresh_thread(engine: RuleEngine, observer) -> threading.Thread | None:
     refresh_interval = Configs.instance.refresh_interval
     if not refresh_interval:
         return None
@@ -203,6 +203,7 @@ def main() -> None:
     _configure_logging(args.verbose)
 
     Configs.load_configs()
+    Configs.instance.log_configs()
 
     if args.thread_timeout is not None:
         Configs.instance.thread_timeout = args.thread_timeout

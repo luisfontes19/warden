@@ -2,5 +2,9 @@
     "python.analysis.importFormat": "absolute",
     "yaml.schemas": {
         "./rules.schema.json": "*/rules.yml"
+    },
+    "chat.tools.terminal.autoApprove": {
+        "uv": true,
+        "task": true
     }
 }

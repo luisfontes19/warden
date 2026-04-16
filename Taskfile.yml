@@ -16,12 +16,18 @@ tasks:
     silent: true
 
   test:
+    desc: Run all tests
+    cmds:
+      - task: test:unit
+      - task: test:rules
+
+  test:unit:
     desc: Run tests
     cmds:
       - echo "Running tests..."
       - uv run pytest
 
-  test-rules:
+  test:rules:
     desc: Run rule tests
     cmds:
       - echo "Running rule tests..."
