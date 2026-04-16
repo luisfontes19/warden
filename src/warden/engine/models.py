@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+import logging
 
 from warden.engine.actions import (
     ActionResult,
@@ -17,7 +18,7 @@ from warden.engine.actions import (
 from warden.engine.file_utils import load_file, resolve_file_path, resolve_filetype
 from warden.engine.patterns import match_patterns
 
-logger = logging.getLogger(__name__)
+
 
 
 class Match:
@@ -77,7 +78,7 @@ class Rule:
         raw_files = [raw_file] if isinstance(raw_file, str) else list(raw_file)
         files = [resolve_file_path(f) for f in raw_files]
 
-        logging.debug(f"Resolved paths for rule: {files}")
+        logging.debug("Resolved paths for rule %s: %s", data["id"], files)
 
         return cls(
             rule_id=data["id"],
@@ -103,6 +104,7 @@ class Rule:
     def evaluate_against_file(self, file_path: str) -> list[Match]:
         """Evaluate this rule against its target file. Returns a list of Match objects."""
         if self.patterns is None:
+            logging.debug("Rule %r: no patterns, auto-match for %s", self.rule_id, file_path)
             return [self._make_match(file_path, matched_content=None)]
 
         path = Path(file_path)
@@ -110,12 +112,14 @@ class Rule:
             content = load_file(path, self.filetype)
             file_content = content
         else:
+            logging.debug("Rule %r: file %s does not exist", self.rule_id, file_path)
             content = path
             file_content = None
 
         filetype = resolve_filetype(path, self.filetype)
         matched, extracted = match_patterns(self.patterns, content, filetype)
         if not matched:
+            logging.debug("Rule %r: patterns did not match for %s", self.rule_id, file_path)
             return []
 
         if isinstance(extracted, list):
@@ -134,6 +138,7 @@ class Rule:
 
         for action in self.actions:
             action_key = next(iter(action))
+            logging.debug("Rule %r: applying action '%s'", self.rule_id, action_key)
 
             if action_key == "code":
                 if self.rules_dir is None:
@@ -174,7 +179,9 @@ class RuleFile:
 
     def _parse(self) -> list[Rule]:
         data = yaml.safe_load(self.path.read_text(encoding="utf-8"))
-        return [Rule.from_dict(r, rules_dir=self.path.parent) for r in data.get("rules", [])]
+        rules = [Rule.from_dict(r, rules_dir=self.path.parent) for r in data.get("rules", [])]
+        logging.debug("Parsed %d rule(s) from %s", len(rules), self.path)
+        return rules
 
     @property
     def rules(self) -> list[Rule]:

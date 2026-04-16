@@ -78,6 +78,10 @@ id: no-debug-statements
 string or an array of strings. All paths are relative to the working directory
 Warden is started from.
 
+Each entry can be a literal path or a **regex pattern**. When matching,
+`^` and `$` anchors are added automatically, so the pattern always matches
+the full path.
+
 ```yaml
 # single file
 file: config/settings.json
@@ -86,6 +90,9 @@ file: config/settings.json
 file:
   - config/settings.json
   - config/settings.local.json
+
+# regex — matches any .json file under config/
+file: config/.*\.json
 ```
 
 ---
@@ -489,6 +496,11 @@ freely.
 
 The code path cannot traverse outside the rules directory (path-traversal
 attempts raise an error).
+
+> **Security:** Code actions must be explicitly allowed before they can run.
+> Set `allow-code-rules` to `true` in your MDM policy, or set the environment
+> variable `ALLOW_CODE_RULES=true`. If neither is set, code actions are
+> disabled by default.
 
 ```yaml
 actions:

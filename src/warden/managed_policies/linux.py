@@ -39,7 +39,8 @@ class LinuxPolicyHandler(ManagedPolicyHandler):
             self.interval = int(content.get("interval", 0)) or None
             self.rules_url = content.get("rules-url")
             self.inline_rules = content.get("rules")
-            self.allow_code_rules = bool(content.get("allow-code-rules", False))
+            self.allow_code_rules = bool(content.get("allow-code-rules") if content.get("allow-code-rules") is not None else False)
+            self.thread_timeout = int(content.get("thread-timeout", self.thread_timeout))
 
             logger.debug(
                 "Parsed managed policy: interval=%s, rules_url=%s, inline_rules=%s, allow_code_rules=%s",

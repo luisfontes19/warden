@@ -1,8 +1,3 @@
 - prevent infinite loops of edit and scan (also with external tools editing)
-- globs
 - test the actions
-- the enforce method may save a file multiple times to get all the rules applied
 - test what happens when the change it a file delete
-- enforce config to allow to run code in rules
-    - Have setting "allow" "managed_only" and "disallow"
-    - add this to the tutorial and documentation

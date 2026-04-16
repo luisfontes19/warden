@@ -366,6 +366,10 @@ handler runs every time the file changes.
 
 > **Security note:** The code path must stay within the rules directory.
 > Warden rejects path-traversal attempts like `../../etc/passwd`.
+>
+> Code actions are disabled by default. To enable them, set `allow-code-rules`
+> to `true` in your MDM policy, or set the environment variable
+> `ALLOW_CODE_RULES=true`.
 
 ---
 

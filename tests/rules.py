@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 import tempfile
@@ -8,12 +9,15 @@ from pathlib import Path
 import traceback
 from typing import Any
 
+from warden.configs import Configs
 from warden.engine.models import ActionResult, RuleFile, Match
 
 RULES_DIR = Path(__file__).parent / "rules"
 
 W = 64
 
+os.environ["ALLOW_CODE_RULES"] = "true"  # Ensure code rules are enabled for tests
+Configs.load_configs()
 
 def _scenario_dirs() -> list[Path]:
     return sorted(d for d in RULES_DIR.iterdir() if d.is_dir())

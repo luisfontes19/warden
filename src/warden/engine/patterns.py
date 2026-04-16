@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Any
+import logging
 
 import jq
+
+
 
 _LEAF_MATCHERS: dict[str, Any] = {
     "jq": None,  # set below
@@ -142,6 +146,7 @@ def _match_nested(sub_patterns: list[dict], content: Any, filetype: str) -> tupl
     for sub in sub_patterns:
         matched, val = _match_pattern(sub, current, filetype)
         if not matched:
+            logging.debug("Nested chain broke at pattern %s", sub)
             return False, content
         try:
             current = parse_content(val, filetype)

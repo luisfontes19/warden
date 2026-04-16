@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
+import logging
 
 
 def resolve_file_path(raw: str) -> str:
@@ -19,6 +21,7 @@ def resolve_filetype(path: Path, filetype: str | None) -> str:
 
 def load_file(path: Path, filetype: str | None) -> Any:
     resolved = resolve_filetype(path, filetype)
+    logging.debug("Loading %s as %s", path, resolved)
     return parse_content(path.read_bytes(), resolved)
 
 

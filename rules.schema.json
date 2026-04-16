@@ -34,7 +34,7 @@
                     "description": "Unique identifier for this rule."
                 },
                 "file": {
-                    "description": "Path(s) to the file(s) this rule inspects. Accepts a single string or an array of strings.",
+                    "description": "Path(s) to the file(s) this rule inspects. Accepts a single string or an array of strings. Each entry can be a literal path or a regex pattern (^ and $ anchors are added automatically).",
                     "oneOf": [
                         {
                             "type": "string"

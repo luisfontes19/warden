@@ -6,6 +6,7 @@ from typing import Any
 from jinja2 import BaseLoader, Environment
 
 
+
 def _json_filter(value: Any) -> str:
     """Jinja2 global: serialise any value to a JSON string."""
     from warden.engine.models import Match

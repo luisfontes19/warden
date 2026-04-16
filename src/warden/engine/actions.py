@@ -9,10 +9,12 @@ from typing import Any
 
 import jq
 import requests
+import logging
 
+from warden import Configs
 from warden.engine.templates import build_template_context, render_value
 
-logger = logging.getLogger(__name__)
+
 
 
 class ActionResult(Enum):
@@ -24,6 +26,9 @@ class ActionResult(Enum):
 
 def invoke_code_handler(code_path: str, rules_dir: Path, filename: str) -> None:
     """Dynamically load a Python file and call its handler(filename) function."""
+    if not Configs.instance.allow_code_rules:
+        return logging.warning("Code execution is disabled by config, skipping code handler: %s", code_path)
+
     rules_dir_resolved = rules_dir.resolve()
     resolved = (rules_dir / code_path).resolve()
 
@@ -32,6 +37,8 @@ def invoke_code_handler(code_path: str, rules_dir: Path, filename: str) -> None:
 
     if not resolved.exists():
         raise FileNotFoundError(f"Code handler file not found: {resolved}")
+
+    logging.info("Invoking code handler %s for %s", resolved, filename)
 
     spec = importlib.util.spec_from_file_location("_warden_rule_handler", resolved)
     if spec is None or spec.loader is None:
@@ -51,6 +58,7 @@ def apply_text_actions(
 ) -> str:
     content = file_content if file_content is not None else ""
     needles = [str(n) for n in matched_contents if n is not None]
+    logging.debug("Applying %d text action(s) to %d needle(s)", len(actions), len(needles))
 
     for action in actions:
         [(key, value)] = action.items()
@@ -72,6 +80,7 @@ def apply_json_actions(
 ) -> str:
     content = file_content if file_content is not None else {}
     matched_content = matched_contents[0] if len(matched_contents) == 1 else matched_contents
+    logging.debug("Applying %d JSON action(s)", len(actions))
 
     for action in actions:
         [(key, value)] = action.items()
@@ -109,7 +118,7 @@ def execute_request_action(config: dict, matches: list) -> requests.Response:
     headers = rendered.get("headers") or {}
     body = rendered.get("body")
 
-    logger.info("Rule %r: %s %s", matches[0].rule_id, method, url)
+    logging.info("Rule %r: %s %s", matches[0].rule_id, method, url)
 
     response = requests.request(
         method=method,
@@ -120,5 +129,5 @@ def execute_request_action(config: dict, matches: list) -> requests.Response:
     )
     response.raise_for_status()
 
-    logger.info("Rule %r: response %s", matches[0].rule_id, response.status_code)
+    logging.info("Rule %r: response %s", matches[0].rule_id, response.status_code)
     return response

@@ -12,7 +12,7 @@ tasks:
     sources:
       - "**/*.py"
     cmds:
-      - uv run src/warden/cli.py
+      - uv run src/warden/cli.py -r docs/rule-test/rule.yml
     silent: true
 
   test:

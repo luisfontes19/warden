@@ -33,7 +33,8 @@ class MacOSPolicyHandler(ManagedPolicyHandler):
                 self.interval = int(content.get("interval", "0"))
                 self.rules_url = content.get("rules-url")
                 self.inline_rules = content.get("rules")
-                self.allow_code_rules = bool(content.get("allow-code-rules", False))
+                self.allow_code_rules = bool(content.get("allow-code-rules") if content.get("allow-code-rules") is not None else False)
+                self.thread_timeout = int(content.get("thread-timeout", self.thread_timeout))
 
                 logging.debug(f"Parsed managed preferences: interval={self.interval}, rules_url={self.rules_url}, inline_rules={'present' if self.inline_rules else 'none'}")
         except Exception as exc:

@@ -12,11 +12,13 @@ from pathlib import Path
 class ManagedPolicyHandler(ABC):
     """Abstract interface for reading MDM-managed policy settings."""
 
-    is_managed = False
-    interval: int | None = None
-    rules_url: str | None = None
-    inline_rules: list[str]|None = None
-    allow_code_rules: bool = False
+    def __init__(self) -> None:
+        self.is_managed: bool|bool = False
+        self.interval: int | None = None
+        self.rules_url: str | None = None
+        self.inline_rules: list[str] | None = None
+        self.allow_code_rules: bool | None = None
+        self.thread_timeout: int | None = None
 
     @abstractmethod
     def init(self) -> None:
@@ -26,7 +28,7 @@ class ManagedPolicyHandler(ABC):
     @staticmethod
     def get_policy_handler() -> ManagedPolicyHandler:
         from warden.configs import Configs
-        return Configs.configs.policyHandler
+        return Configs.instance.policyHandler
 
 
     def _extract_inline_rules(self, inline_rules_content: list[str]|None = None) -> None:
@@ -34,7 +36,7 @@ class ManagedPolicyHandler(ABC):
 
 
         from warden.configs import Configs
-        policy_rules_dir = Configs.configs.rules_dir
+        policy_rules_dir = Configs.instance.rules_dir
 
         policy_rules_dir.mkdir(parents=True, exist_ok=True)
 
@@ -57,7 +59,7 @@ class ManagedPolicyHandler(ABC):
 
     def _download_rules(self, url: str) -> Path | None:
         from warden.configs import Configs
-        app_data_dir = Configs.configs.app_data_dir
+        app_data_dir = Configs.instance.app_data_dir
 
         url_rules_dir = app_data_dir / "url-rules"
         url_rules_dir.mkdir(parents=True, exist_ok=True)

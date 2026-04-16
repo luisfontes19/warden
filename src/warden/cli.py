@@ -41,15 +41,15 @@ class Cli:
 
         handler = _RuleHandler(self.rule_engine, regexes)
         observer = Observer()
+
         for d in dirs_to_watch:
             observer.schedule(handler, d, recursive=False)
-
 
         observer.start()
 
         try:
             while observer.is_alive():
-                observer.join(timeout=1)
+                observer.join(timeout=Configs.instance.thread_timeout)
         except KeyboardInterrupt:
             pass
         finally:

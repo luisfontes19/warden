@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 from warden.configs import Configs
-from warden.engine import Rule
+
 from warden.engine.actions import (
     ActionResult,
 )
@@ -13,7 +13,7 @@ from warden.engine.file_utils import resolve_file_path
 
 from warden.configs import Path
 from warden.engine.file_utils import resolve_file_path
-from warden.engine.models import Match, RuleFile
+from warden.engine.models import Match, Rule, RuleFile
 
 
 class RuleEngine:
@@ -21,11 +21,12 @@ class RuleEngine:
 
     def __init__(self, folder: str | None = None, rule_files: list[str] | None = None) -> None:
         self.rules: list[Rule] = []
-        self.rules.extend(self._load_rules_from_folder(Configs.configs.rules_dir))
+        self.rules.extend(self._load_rules_from_folder(Configs.instance.rules_dir))
         if folder:
             self.rules.extend(self._load_rules_from_folder(folder))
         for f in (rule_files or []):
             self.rules.extend(self._load_rules_from_file(f))
+        logging.info("Loaded %d rule(s)", len(self.rules))
 
     @staticmethod
     def _load_rules_from_file(path: str | Path) -> list[Rule]:
@@ -63,13 +64,20 @@ class RuleEngine:
         for rule in self._rules_for_file(file):
             matches = rule.evaluate_against_file(file)
             if not matches:
+                logging.debug("Rule %r: no match for %s", rule.rule_id, file)
                 continue
+
+            logging.info("Rule %r: %d match(es) on %s", rule.rule_id, len(matches), file)
 
             result = rule.apply_actions(matches)
             if isinstance(result, ActionResult):
                 if result is ActionResult.FILE_DELETED:
+                    logging.info("Rule %r: deleting %s", rule.rule_id, file)
                     Path(matches[0].file).unlink(missing_ok=True)
+                else:
+                    logging.info("Rule %r: action result %s", rule.rule_id, result.value)
             elif result is not None:
+                logging.info("Rule %r: writing updated content to %s", rule.rule_id, file)
                 Path(matches[0].file).write_text(result, encoding="utf-8")
 
             results.extend(matches)
