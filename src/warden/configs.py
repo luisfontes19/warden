@@ -1,6 +1,6 @@
 import logging
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 from warden.managed_policies.base import ManagedPolicyHandler
@@ -19,9 +19,13 @@ class Configs:
         self.policyHandler = policyHandler
 
         self.rules_url = policyHandler.rules_url or None
-        self.interval = policyHandler.interval or 10
         self.allow_code_rules = policyHandler.allow_code_rules or os.environ.get("ALLOW_CODE_RULES", "false").lower() == "true"
         self.thread_timeout = policyHandler.thread_timeout or int(os.environ.get("THREAD_TIMEOUT", 30))
+        self.refresh_interval = policyHandler.refresh_interval or int(os.environ.get("REFRESH_INTERVAL", 3600))
+
+        if self.refresh_interval > 5:
+            logging.info(f"Policy refresh interval set to too small, set to 5 minutes")
+            self.refresh_interval = 5
 
 
     @staticmethod

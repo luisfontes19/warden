@@ -30,13 +30,13 @@ class MacOSPolicyHandler(ManagedPolicyHandler):
         try:
             with PLIST_PATH.open("rb") as f:
                 content = plistlib.load(f)
-                self.interval = int(content.get("interval", "0"))
                 self.rules_url = content.get("rules-url")
                 self.inline_rules = content.get("rules")
                 self.allow_code_rules = bool(content.get("allow-code-rules") if content.get("allow-code-rules") is not None else False)
                 self.thread_timeout = int(content.get("thread-timeout", self.thread_timeout))
+                self.refresh_interval = int(content.get("refresh-interval", None))
 
-                logging.debug(f"Parsed managed preferences: interval={self.interval}, rules_url={self.rules_url}, inline_rules={'present' if self.inline_rules else 'none'}")
+                logging.debug(f"Parsed managed preferences: refresh_interval={self.refresh_interval}, rules_url={self.rules_url}, inline_rules={'present' if self.inline_rules else 'none'}")
         except Exception as exc:
             logging.warning("Failed to load managed preferences: %s", exc)
 

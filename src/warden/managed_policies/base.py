@@ -1,24 +1,25 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-
-from asyncio.log import logger
 import base64
 import io
-import requests
 import zipfile
+from abc import ABC, abstractmethod
+from asyncio.log import logger
 from pathlib import Path
+
+import requests
+
 
 class ManagedPolicyHandler(ABC):
     """Abstract interface for reading MDM-managed policy settings."""
 
     def __init__(self) -> None:
         self.is_managed: bool|bool = False
-        self.interval: int | None = None
         self.rules_url: str | None = None
         self.inline_rules: list[str] | None = None
         self.allow_code_rules: bool | None = None
         self.thread_timeout: int | None = None
+        self.refresh_interval: int | None = None
 
     @abstractmethod
     def init(self) -> None:

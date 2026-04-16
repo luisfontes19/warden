@@ -3,15 +3,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-
-from warden.configs import Configs
-
-from warden.engine.actions import (
-    ActionResult,
-)
-from warden.engine.file_utils import resolve_file_path
-
-from warden.configs import Path
+from warden.configs import Configs, Path
+from warden.engine.actions import ActionResult
 from warden.engine.file_utils import resolve_file_path
 from warden.engine.models import Match, Rule, RuleFile
 
@@ -20,16 +13,27 @@ class RuleEngine:
     """Loads rules and evaluates / enforces them against files."""
 
     def __init__(self, folder: str | None = None, rule_files: list[str] | None = None) -> None:
+        self.folder = folder
+        self.rule_files = rule_files
         self.rules: list[Rule] = []
+        self._load_all()
+
+    def _load_all(self) -> None:
+        self.rules = []
         self.rules.extend(self._load_rules_from_folder(Configs.instance.rules_dir))
-        if folder:
-            self.rules.extend(self._load_rules_from_folder(folder))
-        for f in (rule_files or []):
+        if self.folder:
+            self.rules.extend(self._load_rules_from_folder(self.folder))
+        for f in (self.rule_files or []):
             self.rules.extend(self._load_rules_from_file(f))
         logging.info("Loaded %d rule(s)", len(self.rules))
 
         for rule in self.rules:
             rule.apply_defaults()
+
+    def reload(self) -> None:
+        """Re-read all rule sources and rebuild the rules list."""
+        logging.info("Reloading rules")
+        self._load_all()
 
     @staticmethod
     def _load_rules_from_file(path: str | Path) -> list[Rule]:

@@ -36,15 +36,15 @@ class LinuxPolicyHandler(ManagedPolicyHandler):
 
         try:
             content = json.loads(POLICY_PATH.read_bytes())
-            self.interval = int(content.get("interval", 0)) or None
             self.rules_url = content.get("rules-url")
             self.inline_rules = content.get("rules")
             self.allow_code_rules = bool(content.get("allow-code-rules") if content.get("allow-code-rules") is not None else False)
             self.thread_timeout = int(content.get("thread-timeout", self.thread_timeout))
+            self.refresh_interval = int(content.get("refresh-interval", None))
 
             logger.debug(
-                "Parsed managed policy: interval=%s, rules_url=%s, inline_rules=%s, allow_code_rules=%s",
-                self.interval,
+                "Parsed managed policy: refresh_interval=%s, rules_url=%s, inline_rules=%s, allow_code_rules=%s",
+                self.refresh_interval,
                 self.rules_url,
                 "present" if self.inline_rules else "none",
             )
