@@ -15,6 +15,7 @@ look for, and what to do when a match is found.
    2.4 [filetype](#24-filetype)
    2.5 [patterns](#25-patterns)
    2.6 [actions](#26-actions)
+   2.7 [default](#27-default)
 3. [Pattern nodes](#3-pattern-nodes)
    3.1 [contains](#31-contains)
    3.2 [not-contains](#32-not-contains)
@@ -168,6 +169,34 @@ actions:
 
 > **Text vs JSON:** Text files support `delete`, `replace`, and `add`. JSON
 > files only support `replace`.
+
+---
+
+### 2.7 `default`
+
+**Optional.** A string value that is written to the file if it does not exist
+when the rule is loaded. The file is created (including parent directories)
+before any patterns are evaluated.
+
+This is useful for ensuring a configuration file always exists with known
+defaults, so that subsequent patterns and actions can operate on it.
+
+```yaml
+rules:
+  - id: ensure-config
+    file: config/settings.json
+    default: '{"debug": false}'
+    patterns:
+      - jq: '.debug == true'
+    actions:
+      - replace:
+          jq: '.debug = false'
+```
+
+> **Warning:** `default` does not work well with regex file paths. Because
+> regex paths are resolved dynamically at evaluation time, Warden cannot create
+> a file from a regex pattern. If `file` contains a regex, `default` is
+> silently ignored for that entry.
 
 ---
 

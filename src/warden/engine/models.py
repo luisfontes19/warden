@@ -63,6 +63,7 @@ class Rule:
         filetype: str | None = None,
         actions: list[dict] | None = None,
         rules_dir: Path | None = None,
+        default: str | None = None,
     ) -> None:
         self.rule_id = rule_id
         self.files = files
@@ -71,6 +72,7 @@ class Rule:
         self.filetype = filetype
         self.actions: list[dict] = actions or []
         self.rules_dir = rules_dir
+        self.default = default
 
     @classmethod
     def from_dict(cls, data: dict, rules_dir: Path | None = None) -> Rule:
@@ -88,6 +90,7 @@ class Rule:
             filetype=data.get("filetype"),
             actions=data.get("actions") or [],
             rules_dir=rules_dir,
+            default=data.get("default"),
         )
 
     def _make_match(
@@ -165,6 +168,18 @@ class Rule:
 
     def evaluate(self) -> list[Match]:
         return [m for f in self.files for m in self.evaluate_against_file(f)]
+
+    def apply_defaults(self) -> None:
+        """Create missing files with the default content if `default` is set."""
+        if self.default is None:
+            return
+        for file_path in self.files:
+            path = Path(file_path)
+            if path.exists():
+                continue
+            logging.info("Rule %r: creating %s with default content", self.rule_id, file_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(self.default, encoding="utf-8")
 
     def __repr__(self) -> str:
         return f"Rule(id={self.rule_id!r}, files={self.files!r})"

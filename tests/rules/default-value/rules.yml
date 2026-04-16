@@ -1,0 +1,11 @@
+version: 1
+rules:
+  - id: default-content-test
+    file:
+      - "dummy"
+    filetype: "text"
+    default: "debug=true\nverbose=false\n"
+    patterns:
+      - contains: "debug=true"
+    actions:
+      - replace: "debug=false"

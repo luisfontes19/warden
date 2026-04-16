@@ -83,6 +83,10 @@
                         "$ref": "#/$defs/actionNode"
                     },
                     "minItems": 1
+                },
+                "default": {
+                    "type": "string",
+                    "description": "Default content to write to the file if it does not exist when the rule is loaded. The file is created before any patterns are evaluated. Note: regex file paths are not supported with this field."
                 }
             }
         },

@@ -27,3 +27,17 @@ tasks:
       - echo "Running rule tests..."
       #- uv run pytest tests/rules.test.py -v -s 2>&1
       - uv run python tests/rules.py
+
+  build:
+    desc: Build standalone binary with PyInstaller
+    cmds:
+      - echo "Building standalone binary..."
+      - >-
+        uv run --group build pyinstaller src/warden/cli.py
+        --onefile
+        --name warden
+        --paths src
+        --additional-hooks-dir packaging/macos/hooks
+        --clean
+        --noconfirm
+      - echo "Build complete. Output at dist/warden"

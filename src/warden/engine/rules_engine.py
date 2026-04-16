@@ -28,6 +28,9 @@ class RuleEngine:
             self.rules.extend(self._load_rules_from_file(f))
         logging.info("Loaded %d rule(s)", len(self.rules))
 
+        for rule in self.rules:
+            rule.apply_defaults()
+
     @staticmethod
     def _load_rules_from_file(path: str | Path) -> list[Rule]:
         try:

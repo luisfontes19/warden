@@ -53,7 +53,9 @@ def run_scenario(rule_dir: Path) -> bool:
     sample = next((f for f in rule_dir.iterdir() if f.stem == "sample"), None)
     outcome = next((f for f in rule_dir.iterdir() if f.stem == "outcome"), None)
 
-    if sample is None:
+    has_default = any(r.default is not None for r in RuleFile(rule_yml).rules)
+
+    if sample is None and not has_default:
         print(f"  ❌ no sample.* file found")
         return False
     if outcome is None:
@@ -61,14 +63,28 @@ def run_scenario(rule_dir: Path) -> bool:
         return False
 
     rules = RuleFile(rule_yml).rules
-    print(f"  📋 rules: {len(rules)}  |  sample: {sample.name}  |  outcome: {outcome.name}")
+    sample_label = sample.name if sample else "(default)"
+    print(f"  📋 rules: {len(rules)}  |  sample: {sample_label}  |  outcome: {outcome.name}")
     print(f"  {'·' * (W - 4)}")
 
-    with tempfile.NamedTemporaryFile(suffix=sample.suffix, delete=False) as tmp:
+    suffix = sample.suffix if sample else outcome.suffix
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp_path = Path(tmp.name)
 
     try:
-        shutil.copy2(sample, tmp_path)
+        if sample:
+            shutil.copy2(sample, tmp_path)
+        else:
+            tmp_path.unlink(missing_ok=True)
+
+        for rule in rules:
+            if rule.default is not None:
+                original_files = rule.files
+                rule.files = [str(tmp_path)]
+                rule.apply_defaults()
+                rule.files = original_files
+                if tmp_path.exists():
+                    print(f"  📝 {rule.rule_id!r}  — default content written")
 
         result: Any = None
         result_from_actions = False
