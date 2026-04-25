@@ -203,7 +203,10 @@ def _cmd_bundle(args: argparse.Namespace) -> None:
         output = Path(args.output)
         create_bundle(folder, key_path, output)
         print(f"Bundle created: {output}")
-        print(f"Signed {sum(1 for f in folder.rglob('*') if f.is_file() and f.name != 'signatures.txt')} file(s)")
+        signed = sum(
+            1 for f in folder.rglob("*") if f.is_file() and f.name != Configs.SIGNATURES_FILE
+        )
+        print(f"Signed {signed} file(s)")
         _check_bundle_error_url_configured()
 
     else:

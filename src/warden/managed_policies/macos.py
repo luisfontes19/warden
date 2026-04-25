@@ -11,14 +11,6 @@ PLIST_PATH = Path("/Library/Managed Preferences/com.thesecurityvault.warden.plis
 class MacOSPolicyHandler(ManagedPolicyHandler):
     """Reads MDM-managed preferences from the macOS managed preferences plist."""
 
-    def init(self) -> None:
-        logging.info("Initializing MacOSPolicyHandler")
-        self.parse()
-
-        if self.has_policy and self.rules_url:
-            self._download_rules(self.rules_url)
-
-
     def parse(self):
         if not PLIST_PATH.exists():
             logging.info("Managed preferences plist not found at %s", PLIST_PATH)

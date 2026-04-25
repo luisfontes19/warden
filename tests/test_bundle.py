@@ -14,13 +14,16 @@ from warden.bundle import (
     create_signatures_data,
     generate_keypair,
     load_private_key,
-    load_signatures,
-    post_bundle_error,
     public_key_from_b64,
     public_key_to_b64,
     save_private_key,
-    verify_file,
     write_signatures,
+)
+from warden.engine.verifier import (
+    load_signatures,
+    post_bundle_error,
+    verify_file,
+    verify_files_checksum,
 )
 
 # ---------------------------------------------------------------------------
@@ -134,8 +137,40 @@ class TestVerifyFile:
 
 
 # ---------------------------------------------------------------------------
-# signatures.txt creation and loading
+# signatures.json creation, loading, and checksum
 # ---------------------------------------------------------------------------
+
+
+class TestVerifyFilesChecksum:
+    def test_valid_checksum_returns_true(self, tmp_path: Path):
+        priv, pub_raw = generate_keypair()
+        pub = public_key_from_b64(public_key_to_b64(pub_raw))
+        (tmp_path / "rule.yml").write_text("rule")
+        data = create_signatures_data(tmp_path, priv)
+        assert verify_files_checksum(data, pub) is True
+
+    def test_missing_checksum_returns_false(self, tmp_path: Path):
+        _, pub_raw = generate_keypair()
+        pub = public_key_from_b64(public_key_to_b64(pub_raw))
+        data = {"version": 1, "algorithm": "ed25519", "files": {}}
+        assert verify_files_checksum(data, pub) is False
+
+    def test_tampered_files_dict_returns_false(self, tmp_path: Path):
+        priv, pub_raw = generate_keypair()
+        pub = public_key_from_b64(public_key_to_b64(pub_raw))
+        (tmp_path / "rule.yml").write_text("rule")
+        data = create_signatures_data(tmp_path, priv)
+        # Remove an entry from files after signing — checksum must fail
+        data["files"].pop("rule.yml")
+        assert verify_files_checksum(data, pub) is False
+
+    def test_wrong_key_returns_false(self, tmp_path: Path):
+        priv, _ = generate_keypair()
+        _, wrong_pub_raw = generate_keypair()
+        wrong_pub = public_key_from_b64(public_key_to_b64(wrong_pub_raw))
+        (tmp_path / "rule.yml").write_text("rule")
+        data = create_signatures_data(tmp_path, priv)
+        assert verify_files_checksum(data, wrong_pub) is False
 
 
 class TestSignaturesFile:
@@ -149,7 +184,7 @@ class TestSignaturesFile:
         data = create_signatures_data(tmp_path, priv)
         assert set(data["files"].keys()) == {"a.yml", "b.yml", "sub/c.py"}
 
-    def test_create_excludes_signatures_txt(self, tmp_path: Path):
+    def test_create_excludes_signatures_json(self, tmp_path: Path):
         priv, _ = generate_keypair()
         (tmp_path / "rule.yml").write_text("rule")
         (tmp_path / SIGNATURES_FILE).write_text("old")

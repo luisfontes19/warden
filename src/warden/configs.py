@@ -11,6 +11,8 @@ from warden.managed_policies.macos import MacOSPolicyHandler
 @dataclass(init=True)
 
 class Configs:
+    SIGNATURES_FILE = "signatures.json"
+
     instance: "Configs"
 
     def __init__(self,app_data_dir: Path,rules_dir: Path, policyHandler: ManagedPolicyHandler) -> None:
@@ -58,12 +60,13 @@ class Configs:
         else:
             raise NotImplementedError(f"No managed policy handler implemented for platform: {system}")
 
+
         Configs.instance = Configs(
             app_data_dir=app_data_dir,
             rules_dir= rules_dir,
             policyHandler=policyHandler
         )
 
-        policyHandler.init()
+        policyHandler.download_rules()
 
         return Configs.instance

@@ -5,13 +5,6 @@ For example, if an mcp.json file sets some mcp servers that are not allowed by t
 
 Project uses `uv` for managing dependencies and taskfile to manage tasks/scripts.
 
-
-## Useful commands
-
-- `uv sync` to install dependencies
-- `task test` to run all tests
-- `task test:rules` to run only the rules tests
-
 ## Coding instructions
 
 - Always use guarded clauses, also known as early returns, to reduce nesting and improve readability. For example, instead of:

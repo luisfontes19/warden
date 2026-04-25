@@ -1,6 +1,7 @@
 {
   "version": 1,
   "algorithm": "ed25519",
+  "checksum": "ehG4CER/g45VR9750clKUBFJD3XsQfzRXbopH3Sm262ILb1Nbug4BnnJwhqcb9Lc/b56eAsWbf8txMaMYMUKCw==",
   "files": {
     "rule.yml": "5yduqWTM6HngeAa0oLHmn8ynS3irhrmPD9GXNrW4VeNnBwC+bD7uVAkICH+Xe/cZUZhD+tX9Fe0+JtPtKx9aBw=="
   }

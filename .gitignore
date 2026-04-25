@@ -1,3 +1,7 @@
+data/bundle.zip
+data/file.txt
+
+
 # Python
 __pycache__/
 *.py[cod]
@@ -43,3 +47,5 @@ Thumbs.db
 
 # MkDocs
 site/
+data/file.txt
+data/bundle.zip

@@ -2,7 +2,7 @@
 
 These tests exercise:
 - RuleEngine only loading verified rule files when a signing key is configured
-- RuleEngine refusing to load from a folder with no signatures.txt when a key is set
+- RuleEngine refusing to load from a folder with no signatures.json when a key is set
 - RuleEngine skipping individual files that fail verification
 - Code handler signature verification in actions.py
 
@@ -13,7 +13,7 @@ and Rule accepts it directly for code-handler tests.
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -22,7 +22,6 @@ from warden.bundle import (
     create_signatures_data,
     generate_keypair,
     public_key_to_b64,
-    save_private_key,
     write_signatures,
 )
 from warden.engine.rules_engine import RuleEngine, invoke_code_handler
@@ -65,6 +64,21 @@ def _sign_folder(folder: Path, priv) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Shared fixture: isolate engine from the real system Configs instance
+# ---------------------------------------------------------------------------
+
+
+def _mock_configs(tmp_path: Path):
+    """Return a mock Configs.instance that has no rules_dir rules and no inline rules."""
+    mock = MagicMock()
+    mock.rules_dir = tmp_path / "_empty_rules_dir"  # does not exist → no rules loaded
+    mock.policyHandler.inline_rules = []
+    mock.bundle_signing_public_key = None
+    mock.bundle_error_url = None
+    return mock
+
+
+# ---------------------------------------------------------------------------
 # Loading without a signing key (existing behaviour unchanged)
 # ---------------------------------------------------------------------------
 
@@ -75,18 +89,22 @@ class TestNoSigningKey:
         folder.mkdir()
         _write_rule(folder)
 
-        engine = RuleEngine(folder=str(folder))
+        with patch("warden.engine.rules_engine.Configs") as mock_cfg:
+            mock_cfg.instance = _mock_configs(tmp_path)
+            engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 1
 
     def test_ignores_signatures_txt_when_no_key(self, tmp_path: Path):
-        """signatures.txt present but no key configured → load as normal."""
+        """signatures.json present but no key configured → load as normal."""
         folder = tmp_path / "rules"
         folder.mkdir()
         _write_rule(folder)
         priv, _ = generate_keypair()
         _sign_folder(folder, priv)
 
-        engine = RuleEngine(folder=str(folder))
+        with patch("warden.engine.rules_engine.Configs") as mock_cfg:
+            mock_cfg.instance = _mock_configs(tmp_path)
+            engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 1
 
 
@@ -199,7 +217,7 @@ class TestCodeHandlerSignatureVerification:
         sig_data = create_signatures_data(tmp_path, priv)
         write_signatures(tmp_path, sig_data)
 
-        with patch("warden.engine.actions.Configs") as mock_cfg:
+        with patch("warden.engine.rules_engine.Configs") as mock_cfg:
             mock_cfg.instance.allow_code_rules = True
             invoke_code_handler(
                 "handler.py", tmp_path, str(target),
@@ -215,7 +233,7 @@ class TestCodeHandlerSignatureVerification:
 
         priv, _ = generate_keypair()
 
-        with patch("warden.engine.actions.Configs") as mock_cfg:
+        with patch("warden.engine.rules_engine.Configs") as mock_cfg:
             mock_cfg.instance.allow_code_rules = True
             with pytest.raises(ValueError, match="no signature"):
                 invoke_code_handler(
@@ -235,7 +253,7 @@ class TestCodeHandlerSignatureVerification:
 
         handler_file.write_text("def handler(f): open('/tmp/evil','w')", encoding="utf-8")
 
-        with patch("warden.engine.actions.Configs") as mock_cfg:
+        with patch("warden.engine.rules_engine.Configs") as mock_cfg:
             mock_cfg.instance.allow_code_rules = True
             with pytest.raises(ValueError, match="invalid signature"):
                 invoke_code_handler(
@@ -248,6 +266,6 @@ class TestCodeHandlerSignatureVerification:
         target = tmp_path / "target.txt"
         target.write_text("x", encoding="utf-8")
 
-        with patch("warden.engine.actions.Configs") as mock_cfg:
+        with patch("warden.engine.rules_engine.Configs") as mock_cfg:
             mock_cfg.instance.allow_code_rules = True
             invoke_code_handler("handler.py", tmp_path, str(target))

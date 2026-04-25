@@ -7,6 +7,7 @@ tasks:
   default:
     desc: Execute on file changes
     cmds:
+      - task bundle
       - task dev
 
   cli:
@@ -19,7 +20,6 @@ tasks:
     sources:
       - "**/*.py"
     cmds:
-      - task bundle
       - task cli
     silent: true
 

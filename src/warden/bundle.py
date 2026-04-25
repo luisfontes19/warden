@@ -1,11 +1,13 @@
-"""Bundle signing and verification for Warden rule packages.
+"""Bundle signing for Warden rule packages — CLI use only.
+
+Responsibility: create signed bundles (keygen, sign files, write signatures.json, zip).
+Verification of bundles at rule-load time lives in warden.engine.verifier.
 
 Uses Ed25519 (EdDSA) from the `cryptography` library for signing.
-Ed25519 is a fast, well-supported elliptic-curve signature scheme.
 
 Key hierarchy:
   key.ed25519   (Ed25519 private key — admin keeps this secret)
-      └─ sign(file_bytes) ─► per-file signature stored in signatures.txt
+      └─ sign(file_bytes) ─► per-file signature stored in signatures.json
 
   public key    (derived from key.ed25519)
       └─ distributed via MDM as bundle-signing-public-key (base64 raw bytes)
@@ -24,15 +26,12 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-import requests
-from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
-    Ed25519PrivateKey,
-    Ed25519PublicKey,
-)
+    Ed25519PrivateKey, Ed25519PublicKey)
 
-SIGNATURES_FILE = "signatures.txt"
+from warden.configs import Configs
+
 DEFAULT_KEY_PATH = Path.home() / ".warden" / "key.ed25519"
 
 
@@ -95,7 +94,7 @@ def public_key_from_b64(b64: str) -> Ed25519PublicKey:
 
 
 # ---------------------------------------------------------------------------
-# Per-file signing and verification
+# Per-file signing
 # ---------------------------------------------------------------------------
 
 
@@ -104,55 +103,41 @@ def _sign_file(path: Path, private_key: Ed25519PrivateKey) -> str:
     return base64.b64encode(private_key.sign(path.read_bytes())).decode("ascii")
 
 
-def verify_file(path: Path, sig_b64: str, public_key: Ed25519PublicKey) -> bool:
-    """Verify an Ed25519 signature over file bytes. Returns False on any failure."""
-    try:
-        public_key.verify(base64.b64decode(sig_b64), path.read_bytes())
-        return True
-    except InvalidSignature:
-        return False
-    except Exception as exc:
-        logging.warning("Signature check failed for %s: %s", path, exc)
-        return False
-
-
 # ---------------------------------------------------------------------------
-# signatures.txt creation and loading
+# signatures.json creation
 # ---------------------------------------------------------------------------
 
 
 def create_signatures_data(
     folder: Path, private_key: Ed25519PrivateKey
 ) -> dict[str, Any]:
-    """Sign every file in *folder* (excluding signatures.txt) and return the manifest."""
+    """Sign every non-dotfile in *folder* (excluding signatures.json) and return the manifest.
+
+    The ``checksum`` field is an Ed25519 signature over the canonical JSON of
+    the ``files`` dict. The engine verifies this checksum first to ensure the
+    manifest has not been tampered with before checking individual file signatures.
+    """
     files: dict[str, str] = {}
     for file_path in sorted(folder.rglob("*")):
         if not file_path.is_file():
             continue
-        if file_path.name == SIGNATURES_FILE:
+        if file_path.name.startswith("."):
+            continue
+        if file_path.name == Configs.SIGNATURES_FILE:
             continue
         rel = str(file_path.relative_to(folder))
         files[rel] = _sign_file(file_path, private_key)
-    return {"version": 1, "algorithm": "ed25519", "files": files}
+
+    files_bytes = json.dumps(files, sort_keys=True).encode("utf-8")
+    checksum = base64.b64encode(private_key.sign(files_bytes)).decode("ascii")
+    return {"version": 1, "algorithm": "ed25519", "checksum": checksum, "files": files}
 
 
 def write_signatures(folder: Path, data: dict[str, Any]) -> Path:
-    """Write *data* as JSON to ``signatures.txt`` inside *folder*."""
-    sig_path = folder / SIGNATURES_FILE
+    """Write *data* as JSON to ``signatures.json`` inside *folder*."""
+    sig_path = folder / Configs.SIGNATURES_FILE
     sig_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return sig_path
-
-
-def load_signatures(folder: Path) -> dict[str, Any] | None:
-    """Load and parse ``signatures.txt`` from *folder*. Returns None if missing/malformed."""
-    sig_path = folder / SIGNATURES_FILE
-    if not sig_path.exists():
-        return None
-    try:
-        return json.loads(sig_path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        logging.warning("Failed to parse signatures.txt in %s: %s", folder, exc)
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -161,9 +146,10 @@ def load_signatures(folder: Path) -> dict[str, Any] | None:
 
 
 def create_bundle(folder: Path, private_key_path: Path, output_path: Path) -> None:
-    """Sign every file in *folder* and package the result as a zip at *output_path*.
+    """Sign every non-dotfile in *folder* and package the result as a zip at *output_path*.
 
-    Writes ``signatures.txt`` into *folder* before zipping.
+    Writes ``signatures.json`` into *folder* before zipping.
+    Dotfiles (names starting with ``.``) are excluded from both signing and the archive.
     """
     private_key = load_private_key(private_key_path)
 
@@ -173,26 +159,10 @@ def create_bundle(folder: Path, private_key_path: Path, output_path: Path) -> No
 
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for file_path in sorted(folder.rglob("*")):
-            if file_path.is_file():
-                zf.write(file_path, file_path.relative_to(folder))
+            if not file_path.is_file():
+                continue
+            if file_path.name.startswith("."):
+                continue
+            zf.write(file_path, file_path.relative_to(folder))
 
     logging.info("Bundle written to %s", output_path)
-
-
-# ---------------------------------------------------------------------------
-# Error reporting
-# ---------------------------------------------------------------------------
-
-
-def post_bundle_error(url: str, message: str) -> None:
-    """POST a bundle integrity error to *url*. Failures are logged, not raised."""
-    try:
-        resp = requests.post(
-            url,
-            json={"error": message, "source": "warden-bundle-verification"},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        logging.info("Bundle error reported to %s", url)
-    except Exception as exc:
-        logging.warning("Could not POST bundle error to %s: %s", url, exc)

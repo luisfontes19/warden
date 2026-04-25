@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import logging
+import shutil
 import zipfile
 from abc import ABC, abstractmethod
 from asyncio.log import logger
@@ -24,9 +25,12 @@ class ManagedPolicyHandler(ABC):
         self.bundle_signing_public_key: str | None = None
         self.bundle_error_url: str | None = None
 
+        self.parse()
+
+
     @abstractmethod
-    def init(self) -> None:
-        """Initialize the policy handler, loading any existing policies."""
+    def parse(self) -> None:
+        """Read and parse the managed policy settings from the platform-specific source."""
         pass
 
     def _validate_bundle_config(self) -> None:
@@ -68,25 +72,32 @@ class ManagedPolicyHandler(ABC):
 
         logger.info(f"Extracted {written} inline rule(s) to {policy_rules_dir}")
 
+    def download_rules(self) -> Path | None:
+        if not self.rules_url: return None
 
-    def _download_rules(self, url: str) -> Path | None:
         from warden.configs import Configs
-        logging.info(f"Downloading rules from {url}")
+        logging.info(f"Downloading rules from {self.rules_url}")
 
         rules_dir = Configs.instance.rules_dir
         rules_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            response = requests.get(url, timeout=30)
+            response = requests.get(self.rules_url, timeout=30)
             response.raise_for_status()
             zip_data = response.content
         except Exception as exc:
-            logger.error("Failed to download rules from %s: %s", url, exc)
+            logger.error("Failed to download rules from %s: %s", self.rules_url, exc)
             return None
 
 
         for existing in rules_dir.glob("*"):
-            existing.unlink()
+            try:
+                if existing.is_file() or existing.is_symlink():
+                    existing.unlink()
+                elif existing.is_dir():
+                    shutil.rmtree(existing)
+            except Exception as exc:
+                logger.warning("Failed to remove existing rule file %s: %s", existing, exc)
 
         try:
             with zipfile.ZipFile(io.BytesIO(zip_data)) as zf:

@@ -102,6 +102,10 @@ This will:
 2. Write `my-rules/signatures.txt` — the signature manifest.
 3. Zip `my-rules/` (including `signatures.txt`) to `my-rules.zip`.
 
+> **Note:** Files whose names begin with `.` (dot-files, e.g. `.gitignore`,
+> `.DS_Store`) are automatically excluded from both signing and the zip archive.
+> Only your rule files and handlers end up in the bundle.
+
 ### Options
 
 | Flag | Description |

@@ -11,6 +11,9 @@ from warden.configs import Configs, Path
 from warden.engine.actions import ActionResult
 from warden.engine.file_utils import resolve_file_path
 from warden.engine.models import Match, Rule, RuleFile
+from warden.engine.verifier import (load_signatures, post_bundle_error,
+                                    public_key_from_b64, verify_bundle,
+                                    verify_file)
 
 
 def invoke_code_handler(
@@ -35,13 +38,13 @@ def invoke_code_handler(
         raise FileNotFoundError(f"Code handler file not found: {resolved}")
 
     if bundle_signing_public_key is not None:
-        from warden.bundle import load_signatures, public_key_from_b64, verify_file
-
         sig_data = load_signatures(rules_dir_resolved)
         rel = str(resolved.relative_to(rules_dir_resolved))
         sig_b64 = (sig_data or {}).get("files", {}).get(rel)
         if sig_b64 is None:
-            raise ValueError(f"Code handler {code_path!r} has no signature in signatures.txt")
+            raise ValueError(
+                f"Code handler {code_path!r} has no signature in signatures.json"
+            )
         try:
             pub_key = public_key_from_b64(bundle_signing_public_key)
         except Exception as exc:
@@ -85,6 +88,7 @@ class RuleEngine:
         self.rules.extend(self._load_inline_rules())
         if self.folder:
             self.rules.extend(self._load_rules_from_folder(self.folder))
+
         for f in (self.rule_files or []):
             self.rules.extend(self._load_rules_from_file(f))
         logging.info("Loaded %d rule(s)", len(self.rules))
@@ -97,41 +101,11 @@ class RuleEngine:
         logging.info("Reloading rules")
         self._load_all()
 
-    def _get_signing_public_key(self) -> str | None:
-        if self._bundle_signing_public_key is not None:
-            return self._bundle_signing_public_key
-        try:
-            return Configs.instance.bundle_signing_public_key
-        except AttributeError:
-            return None
-
     def _get_bundle_error_url(self) -> str | None:
         try:
             return Configs.instance.bundle_error_url
         except AttributeError:
             return None
-
-    def _get_verified_files(self, folder: Path, public_key_b64: str) -> frozenset[Path] | None:
-        """Return verified absolute file Paths in *folder*, or None on any failure."""
-        from warden.bundle import load_signatures, public_key_from_b64, verify_file
-
-        sig_data = load_signatures(folder)
-        if sig_data is None:
-            return None
-        try:
-            public_key = public_key_from_b64(public_key_b64)
-        except Exception as exc:
-            logging.error("Invalid bundle public key: %s", exc)
-            return None
-
-        verified: set[Path] = set()
-        for rel_str, sig_b64 in sig_data.get("files", {}).items():
-            file_path = (folder / rel_str).resolve()
-            if file_path.exists() and verify_file(file_path, sig_b64, public_key):
-                verified.add(file_path)
-            else:
-                logging.warning("Bundle verification failed for %s", rel_str)
-        return frozenset(verified)
 
     @staticmethod
     def _load_rules_from_file(path: str | Path) -> list[Rule]:
@@ -142,48 +116,35 @@ class RuleEngine:
             return []
 
     def _load_rules_from_folder(self, folder: str | Path) -> list[Rule]:
-        from warden.bundle import load_signatures, post_bundle_error
-
         folder_path = Path(folder)
         if not folder_path.exists():
             return []
 
-        public_key = self._get_signing_public_key()
+        public_key = Configs.instance.bundle_signing_public_key
 
-        if public_key is not None:
-            sig_data = load_signatures(folder_path)
-            if sig_data is None:
-                msg = f"signatures.txt missing in {folder_path}"
-                logging.error(msg)
-                if url := self._get_bundle_error_url():
-                    post_bundle_error(url, msg)
-                return []
-
-            verified = self._get_verified_files(folder_path, public_key)
-            if verified is None:
-                msg = f"Bundle verification failed for {folder_path}"
-                logging.error(msg)
-                if url := self._get_bundle_error_url():
-                    post_bundle_error(url, msg)
-                return []
-
+        if public_key is None:
             rules: list[Rule] = []
-            for yml in sorted(folder_path.glob("*.yml")):
-                if yml.resolve() not in verified:
-                    msg = f"Unverified rule file skipped: {yml.name}"
-                    logging.warning(msg)
-                    if url := self._get_bundle_error_url():
-                        post_bundle_error(url, msg)
-                    continue
-                loaded = self._load_rules_from_file(yml)
-                for rule in loaded:
-                    rule.bundle_signing_public_key = public_key
-                rules.extend(loaded)
+            for yml in folder_path.glob("*.yml"):
+                rules.extend(self._load_rules_from_file(yml))
             return rules
 
+        # With a signing key: verify the manifest checksum first, then each file.
+        verified = verify_bundle(folder_path, public_key, self._get_bundle_error_url())
+        if verified is None:
+            return []
+
         rules = []
-        for yml in folder_path.glob("*.yml"):
-            rules.extend(self._load_rules_from_file(yml))
+        for yml in sorted(folder_path.glob("*.yml")):
+            if yml.resolve() not in verified:
+                msg = f"Unverified rule file skipped: {yml.name}"
+                logging.warning(msg)
+                if url := self._get_bundle_error_url():
+                    post_bundle_error(url, msg)
+                continue
+            loaded = self._load_rules_from_file(yml)
+            for rule in loaded:
+                rule.bundle_signing_public_key = public_key
+            rules.extend(loaded)
         return rules
 
     @staticmethod
