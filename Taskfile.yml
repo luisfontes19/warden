@@ -2,18 +2,52 @@
 
 version: "3"
 
-vars:
-  GREETING: Hello, world!
-
 tasks:
+
   default:
     desc: Execute on file changes
+    cmds:
+      - task dev
+
+  cli:
+    cmds:
+      - "uv run src/warden/cli.py {{.CLI_ARGS}}"
+
+  dev:
+    desc: Watch for file changes and execute a command
     watch: true
     sources:
       - "**/*.py"
     cmds:
-      - "uv run src/warden/cli.py --verbose test -r docs/rule-test/rule.yml -f docs/rule-test/file.txt"
+      - task bundle
+      - task cli
     silent: true
+
+  run-rule:
+    desc: Run a specific rule test
+    cmds:
+      - task cli --  --verbose test -r docs/rule-test/rule.yml -f
+        docs/rule-test/file.txt
+
+  bundle:
+    desc: Create a rules bundle
+    cmds:
+      - task cli -- bundle create --rules-folder data/rules-bundle --output
+        data/bundle.zip
+
+  servers:docs:
+    desc: Start documentation server
+    cmds:
+
+      - uv run --group docs mkdocs serve -w docs
+
+  servers:mdm:
+    desc: Start server for MDM testing
+    cmds:
+
+      - "mkdir -p /etc/warden && cp ./data/policies/linux.json
+        /etc/warden/policy.json"
+      - python3 -m http.server 5555 --directory ./data
 
   test:
     desc: Run all tests
@@ -34,16 +68,17 @@ tasks:
       #- uv run pytest tests/rules.test.py -v -s 2>&1
       - uv run python tests/rules.py
 
+  docs:
+    desc: Serve documentation site locally
+    cmds:
+      - uv run --group docs mkdocs serve -w docs
+
   build:
     desc: Build standalone binary with PyInstaller
     cmds:
       - echo "Building standalone binary..."
       - >-
-        uv run --group build pyinstaller src/warden/cli.py
-        --onefile
-        --name warden
-        --paths src
-        --additional-hooks-dir packaging/macos/hooks
-        --clean
+        uv run --group build pyinstaller src/warden/cli.py --onefile --name
+        warden --paths src --additional-hooks-dir packaging/macos/hooks --clean
         --noconfirm
       - echo "Build complete. Output at dist/warden"

@@ -17,7 +17,8 @@
                 "ms-python.vscode-pylance",
                 "redhat.vscode-yaml",
                 "tamasfe.even-better-toml",
-                "luisfontes19.watchtower" // DO NOT REMOVE OR DISABLE THIS EXTENSION
+                "anthropic.claude-code",
+                "luisfontes19.watchtower"
             ],
             "settings": {
                 "[python]": {
@@ -36,9 +37,6 @@
                 "editor.codeActionsOnSave": {
                     "source.organizeImports": "always"
                 },
-                // =====================================
-                // !!! DO NOT EDIT THE NEXT SETTINGS !!!
-                // =====================================
                 "editor.unicodeHighlight.invisibleCharacters": true, // Defense against invisible code attacks
                 "editor.unicodeHighlight.ambiguousCharacters": true, // Defense against homograph attacks
                 "editor.unicodeHighlight.includeComments": true, // Include comments in unicode highlighting to avoid trojansource attacks

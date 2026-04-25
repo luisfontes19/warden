@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import zipfile
 from abc import ABC, abstractmethod
 from asyncio.log import logger
@@ -20,11 +21,21 @@ class ManagedPolicyHandler(ABC):
         self.allow_code_rules: bool | None = None
         self.thread_timeout: int | None = None
         self.refresh_interval: int | None = None
+        self.bundle_signing_public_key: str | None = None
+        self.bundle_error_url: str | None = None
 
     @abstractmethod
     def init(self) -> None:
         """Initialize the policy handler, loading any existing policies."""
         pass
+
+    def _validate_bundle_config(self) -> None:
+        """Raise if bundle signing is partially configured."""
+        if self.rules_url and not self.bundle_signing_public_key:
+            raise ValueError(
+                "MDM policy sets 'rules-url' but 'bundle-signing-public-key' is missing. "
+                "All remotely-delivered rule bundles must be signed."
+            )
 
     @staticmethod
     def get_policy_handler() -> ManagedPolicyHandler:
@@ -60,10 +71,10 @@ class ManagedPolicyHandler(ABC):
 
     def _download_rules(self, url: str) -> Path | None:
         from warden.configs import Configs
-        app_data_dir = Configs.instance.app_data_dir
+        logging.info(f"Downloading rules from {url}")
 
-        url_rules_dir = app_data_dir / "url-rules"
-        url_rules_dir.mkdir(parents=True, exist_ok=True)
+        rules_dir = Configs.instance.rules_dir
+        rules_dir.mkdir(parents=True, exist_ok=True)
 
         try:
             response = requests.get(url, timeout=30)
@@ -74,22 +85,26 @@ class ManagedPolicyHandler(ABC):
             return None
 
 
-        for existing in url_rules_dir.glob("*"):
+        for existing in rules_dir.glob("*"):
             existing.unlink()
 
         try:
             with zipfile.ZipFile(io.BytesIO(zip_data)) as zf:
+                count = 0
                 for name in zf.namelist():
                     # Prevent path traversal
-                    target = (url_rules_dir / name).resolve()
+                    target = (rules_dir / name).resolve()
 
-                    if not str(target).startswith(str(url_rules_dir.resolve())):
+                    if not str(target).startswith(str(rules_dir.resolve())):
                         logger.warning("Skipping unsafe zip entry: %s", name)
                         continue
-                    zf.extract(name, url_rules_dir)
 
+                    zf.extract(name, rules_dir)
+                    count += 1
+
+                logger.info(f"Extracted {count} file(s) from downloaded bundle to {rules_dir}")
         except zipfile.BadZipFile as exc:
             logger.error("Downloaded file is not a valid zip archive: %s", exc)
             return None
 
-        return url_rules_dir
+        return rules_dir

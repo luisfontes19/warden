@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "algorithm": "ed25519",
+  "files": {
+    "rule.yml": "5yduqWTM6HngeAa0oLHmn8ynS3irhrmPD9GXNrW4VeNnBwC+bD7uVAkICH+Xe/cZUZhD+tX9Fe0+JtPtKx9aBw=="
+  }
+}

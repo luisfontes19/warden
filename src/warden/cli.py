@@ -5,10 +5,14 @@ import json
 import logging
 import os
 import threading
+from pathlib import Path
 
 from watchdog.events import FileSystemEvent, RegexMatchingEventHandler
 from watchdog.observers import Observer
 
+from warden.bundle import (DEFAULT_KEY_PATH, create_bundle, generate_keypair,
+                           public_key_to_b64, save_private_key,
+                           save_public_key)
 from warden.configs import Configs
 from warden.engine.rules_engine import RuleEngine
 
@@ -26,6 +30,12 @@ class _RuleHandler(RegexMatchingEventHandler):
         self.rule_engine.enforce(str(path))
 
     on_created = on_modified
+
+    def on_deleted(self, event: FileSystemEvent) -> None:
+        path = os.path.realpath(event.src_path)
+        logging.info("%s deleted", path)
+        self.rule_engine.restore_defaults(str(path))
+        self.rule_engine.enforce(str(path))
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -95,6 +105,48 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Path to a directory containing rule files",
     )
 
+    # --- bundle ---
+    bundle_parser = subparsers.add_parser("bundle", help="Bundle signing operations")
+    bundle_sub = bundle_parser.add_subparsers(dest="bundle_command")
+
+    keygen_parser = bundle_sub.add_parser("keygen", help="Generate a new ML-DSA-65 signing key pair")
+    keygen_parser.add_argument(
+        "--output",
+        dest="key_output",
+        metavar="PATH",
+        default=None,
+        help=f"Path to save the private key (default: {DEFAULT_KEY_PATH})",
+    )
+    keygen_parser.add_argument(
+        "--no-save",
+        action="store_true",
+        default=False,
+        help="Print key info without writing to disk",
+    )
+
+    create_parser = bundle_sub.add_parser("create", help="Sign a rules folder and create a zip bundle")
+    create_parser.add_argument(
+        "--rules-folder",
+        dest="folder",
+        metavar="FOLDER",
+        required=True,
+        help="Path to the folder containing rule files to sign",
+    )
+    create_parser.add_argument(
+        "--key",
+        dest="key_path",
+        metavar="KEY",
+        default=None,
+        help=f"Path to the private key file (default: {DEFAULT_KEY_PATH})",
+    )
+    create_parser.add_argument(
+        "--output",
+        dest="output",
+        metavar="OUTPUT",
+        required=True,
+        help="Output path for the zip bundle",
+    )
+
     return parser
 
 
@@ -104,6 +156,58 @@ def _configure_logging(verbose: bool) -> None:
         level=level,
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
+
+
+def _check_bundle_error_url_configured() -> None:
+    """Warn if bundle-error-url is not set in the MDM policy."""
+    try:
+        handler = Configs.instance.policyHandler
+        if handler.is_managed and not Configs.instance.bundle_error_url:
+            print(
+                "\nWarning: 'bundle-error-url' is not configured in MDM policy.\n"
+                "Configure it so agents can report bundle verification failures."
+            )
+    except AttributeError:
+        pass
+
+
+def _cmd_bundle(args: argparse.Namespace) -> None:
+    if args.bundle_command == "keygen":
+        mlkem_key, pub_der = generate_keypair()
+        key_path = Path(args.key_output) if args.key_output else DEFAULT_KEY_PATH
+
+        if not args.no_save:
+            save_private_key(mlkem_key, key_path)
+            print(f"Private key saved to: {key_path}")
+            pub_path = key_path.with_suffix(key_path.suffix + ".pub")
+            save_public_key(pub_der, pub_path)
+            print(f"Public key saved to:  {pub_path}")
+
+        pub_b64 = public_key_to_b64(pub_der)
+        print("\nPublic key (add to MDM policy as 'bundle-signing-public-key'):")
+        print(f"  {pub_b64}")
+        _check_bundle_error_url_configured()
+
+    elif args.bundle_command == "create":
+        folder = Path(args.folder)
+        if not folder.is_dir():
+            print(f"Error: {folder} is not a directory")
+            return
+
+        key_path = Path(args.key_path) if args.key_path else DEFAULT_KEY_PATH
+        if not key_path.exists():
+            print(f"Error: private key not found at {key_path}")
+            print("Run 'warden bundle keygen' first, or pass --key PATH")
+            return
+
+        output = Path(args.output)
+        create_bundle(folder, key_path, output)
+        print(f"Bundle created: {output}")
+        print(f"Signed {sum(1 for f in folder.rglob('*') if f.is_file() and f.name != 'signatures.txt')} file(s)")
+        _check_bundle_error_url_configured()
+
+    else:
+        print("Usage: warden bundle [keygen|create]")
 
 
 def _cmd_test(args: argparse.Namespace) -> None:
@@ -197,6 +301,7 @@ def _cmd_run(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+
     parser = _build_parser()
     args = parser.parse_args()
 
@@ -212,6 +317,8 @@ def main() -> None:
         _cmd_test(args)
     elif args.command == "run":
         _cmd_run(args)
+    elif args.command == "bundle":
+        _cmd_bundle(args)
     else:
         # No subcommand: default to running with MDM/managed rules
         args.rule_files = []

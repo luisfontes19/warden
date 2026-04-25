@@ -34,8 +34,18 @@ class MacOSPolicyHandler(ManagedPolicyHandler):
                 self.allow_code_rules = bool(content.get("allow-code-rules") if content.get("allow-code-rules") is not None else False)
                 self.thread_timeout = int(content.get("thread-timeout", self.thread_timeout))
                 self.refresh_interval = int(content.get("refresh-interval", None))
+                self.bundle_signing_public_key = content.get("bundle-signing-public-key")
+                self.bundle_error_url = content.get("bundle-error-url")
+                self._validate_bundle_config()
 
-                logging.debug(f"Parsed managed preferences: refresh_interval={self.refresh_interval}, rules_url={self.rules_url}, inline_rules={'present' if self.inline_rules else 'none'}")
+                logging.debug(
+                    "Parsed managed preferences: refresh_interval=%s, rules_url=%s, "
+                    "inline_rules=%s, bundle_signing=%s",
+                    self.refresh_interval,
+                    self.rules_url,
+                    "present" if self.inline_rules else "none",
+                    "configured" if self.bundle_signing_public_key else "none",
+                )
         except Exception as exc:
             logging.warning("Failed to load managed preferences: %s", exc)
 

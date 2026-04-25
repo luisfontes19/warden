@@ -39,12 +39,18 @@ class LinuxPolicyHandler(ManagedPolicyHandler):
             self.allow_code_rules = bool(content.get("allow-code-rules") if content.get("allow-code-rules") is not None else False)
             self.thread_timeout = int(content.get("thread-timeout", self.thread_timeout))
             self.refresh_interval = int(content.get("refresh-interval", None))
+            self.bundle_signing_public_key = content.get("bundle-signing-public-key")
+            self.bundle_error_url = content.get("bundle-error-url")
+            self._validate_bundle_config()
 
             logger.debug(
-                "Parsed managed policy: refresh_interval=%s, rules_url=%s, inline_rules=%s, allow_code_rules=%s",
+                "Parsed managed policy: refresh_interval=%s, rules_url=%s, "
+                "inline_rules=%s, allow_code_rules=%s, bundle_signing=%s",
                 self.refresh_interval,
                 self.rules_url,
                 "present" if self.inline_rules else "none",
+                self.allow_code_rules,
+                "configured" if self.bundle_signing_public_key else "none",
             )
         except Exception as exc:
             logger.warning("Failed to load managed policy: %s", exc)

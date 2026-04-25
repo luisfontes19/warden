@@ -1,0 +1,9 @@
+{
+  "rules-url": "http://localhost:5555/bundle.zip",
+  "rules": [],
+  "allow-code-rules": false,
+  "thread-timeout": 60,
+  "refresh-interval": 0,
+  "bundle-signing-public-key": "6dJ4sqm8tglQRRB/JJQ/R+XWe4mRHcvrEG71o6+ve7M=",
+  "bundle-error-url": "http://localhost:5555//error"
+}

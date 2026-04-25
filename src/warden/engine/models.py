@@ -4,16 +4,15 @@ import json
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 import logging
+
+import yaml
 
 from warden.engine.actions import (
     ActionResult,
     apply_json_actions,
     apply_text_actions,
     execute_request_action,
-    invoke_code_handler,
 )
 from warden.engine.file_utils import load_file, resolve_file_path, resolve_filetype
 from warden.engine.patterns import match_patterns
@@ -64,6 +63,7 @@ class Rule:
         actions: list[dict] | None = None,
         rules_dir: Path | None = None,
         default: str | None = None,
+        bundle_signing_public_key: str | None = None,
     ) -> None:
         self.rule_id = rule_id
         self.files = files
@@ -73,6 +73,7 @@ class Rule:
         self.actions: list[dict] = actions or []
         self.rules_dir = rules_dir
         self.default = default
+        self.bundle_signing_public_key: str | None = bundle_signing_public_key
 
     @classmethod
     def from_dict(cls, data: dict, rules_dir: Path | None = None) -> Rule:
@@ -148,7 +149,13 @@ class Rule:
                     raise ValueError(
                         f"Rule {self.rule_id!r}: cannot invoke code handler — rules_dir is not set"
                     )
-                invoke_code_handler(action["code"], self.rules_dir, first.file)
+                from warden.engine.rules_engine import invoke_code_handler
+                invoke_code_handler(
+                    action["code"],
+                    self.rules_dir,
+                    first.file,
+                    bundle_signing_public_key=self.bundle_signing_public_key,
+                )
                 return ActionResult.CODE_HANDLED
 
             if action_key == "request":

@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import logging
 from enum import Enum
-from pathlib import Path
 from typing import Any
 
 import jq
 import requests
-import logging
 
-from warden import Configs
 from warden.engine.templates import build_template_context, render_value
-
-
 
 
 class ActionResult(Enum):
@@ -22,35 +16,6 @@ class ActionResult(Enum):
     FILE_DELETED = "file_deleted"
     CODE_HANDLED = "code_handled"
     REQUEST_SENT = "request_sent"
-
-
-def invoke_code_handler(code_path: str, rules_dir: Path, filename: str) -> None:
-    """Dynamically load a Python file and call its handler(filename) function."""
-    if not Configs.instance.allow_code_rules:
-        return logging.warning("Code execution is disabled by config, skipping code handler: %s", code_path)
-
-    rules_dir_resolved = rules_dir.resolve()
-    resolved = (rules_dir / code_path).resolve()
-
-    if not str(resolved).startswith(str(rules_dir_resolved) + "/") and resolved != rules_dir_resolved:
-        raise ValueError(f"Path traversal detected in code path: {code_path!r}")
-
-    if not resolved.exists():
-        raise FileNotFoundError(f"Code handler file not found: {resolved}")
-
-    logging.info("Invoking code handler %s for %s", resolved, filename)
-
-    spec = importlib.util.spec_from_file_location("_warden_rule_handler", resolved)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load module from {resolved}")
-
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
-
-    if not hasattr(module, "handler"):
-        raise AttributeError(f"Code handler {resolved} must define a 'handler(filename)' function")
-
-    module.handler(filename)
 
 
 def apply_text_actions(

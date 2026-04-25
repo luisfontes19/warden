@@ -3,7 +3,8 @@ rules:
   - id: notify-on-forbidden-word
     description: Sends a request when a forbidden word is found
     file:
-      - docs/rule-test/file.txt
+      - data/file.txt
+    default: test
     filetype: "text"
     patterns:
       - contains: "asd"

@@ -1,0 +1,13 @@
+{
+    "agent": "varis",
+    "tui": "fullscreen",
+    "verbose": true,
+    "permissions": {
+        "defaultMode": "default",
+        "allow": [
+            "Bash(task *)"
+        ],
+        "ask": []
+    },
+    "hooks": {}
+}

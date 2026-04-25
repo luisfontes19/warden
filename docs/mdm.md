@@ -7,21 +7,6 @@ For the rule syntax itself, see [rules.md](rules.md).
 
 ---
 
-## Table of Contents
-
-1. [Overview](#1-overview)
-2. [Installation & deployment](#2-installation--deployment)
-3. [Configuration parameters](#3-configuration-parameters)
-   3.1 [rules-url](#31-rules-url)
-   3.2 [rules (inline rules)](#32-rules-inline-rules)
-   3.3 [allow-code-rules](#33-allow-code-rules)
-   3.4 [refresh-interval](#34-refresh-interval)
-4. [macOS — Managed profile (.mobileconfig)](#4-macos--managed-profile-mobileconfig)
-5. [Linux — Policy file](#5-linux--policy-file)
-6. [Rules delivery strategies](#6-rules-delivery-strategies)
-
----
-
 ## 1. Overview
 
 Warden can be centrally configured through **managed policies**. This allows an
@@ -128,6 +113,42 @@ The interval, in **minutes**, at which Warden re-downloads rules from
 `rules-url`. When set to `0` or omitted, Warden only fetches rules once at
 startup.
 
+### 3.5 `bundle-signing-public-key`
+
+| | |
+|---|---|
+| **Type** | `string` (base64-encoded Ed25519 public key) |
+| **Required** | Yes, when `rules-url` is set |
+| **Default** | *none* |
+
+The Ed25519 public key used to verify signed rule bundles, encoded as base64.
+Warden will refuse to start if `rules-url` is configured without this key.
+
+Generate a key pair with `warden bundle keygen` — the public key is printed to
+stdout in the correct format. See [bundle.md](bundle.md) for the full signing
+workflow.
+
+### 3.6 `bundle-error-url`
+
+| | |
+|---|---|
+| **Type** | `string` (URL) |
+| **Required** | No |
+| **Default** | *none* |
+
+A URL that receives a POST request whenever bundle signature verification fails.
+Use this to alert your security team when an endpoint detects a tampered or
+unsigned bundle. The payload is:
+
+```json
+{
+  "error": "<description of the failure>",
+  "source": "warden-bundle-verification"
+}
+```
+
+Point this at a Slack webhook, PagerDuty event endpoint, or any SIEM ingest URL.
+
 ---
 
 ## 4. macOS — Managed profile (.mobileconfig)
@@ -173,6 +194,10 @@ A reference profile is available at [`Warden.mobileconfig`](Warden.mobileconfig)
                 <false/>
                 <key>refresh-interval</key>
                 <integer>30</integer>
+                <key>bundle-signing-public-key</key>
+                <string>BASE64_PUBLIC_KEY_HERE</string>
+                <key>bundle-error-url</key>
+                <string>https://alerts.example.com/warden/bundle-error</string>
               </dict>
             </dict>
           </array>
@@ -225,7 +250,9 @@ On Linux, Warden reads the policy from a JSON file at:
     "BASE64_ENCODED_RULE_HERE"
   ],
   "allow-code-rules": false,
-  "refresh-interval": 30
+  "refresh-interval": 30,
+  "bundle-signing-public-key": "BASE64_PUBLIC_KEY_HERE",
+  "bundle-error-url": "https://alerts.example.com/warden/bundle-error"
 }
 ```
 

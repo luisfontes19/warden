@@ -1,0 +1,29 @@
+site_name: Warden
+site_description: File policy enforcement agent
+docs_dir: docs
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: deep purple
+    accent: purple
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started: tutorial.md
+  - Rules Reference: rules.md
+  - Bundle Signing: bundle.md
+  - MDM Configuration: mdm.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - admonition
+  - tables

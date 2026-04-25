@@ -5,43 +5,6 @@ look for, and what to do when a match is found.
 
 ---
 
-## Table of Contents
-
-1. [File structure](#1-file-structure)
-2. [Rule fields](#2-rule-fields)
-   2.1 [id](#21-id)
-   2.2 [file](#22-file)
-   2.3 [description](#23-description)
-   2.4 [filetype](#24-filetype)
-   2.5 [patterns](#25-patterns)
-   2.6 [actions](#26-actions)
-   2.7 [default](#27-default)
-3. [Pattern nodes](#3-pattern-nodes)
-   3.1 [contains](#31-contains)
-   3.2 [not-contains](#32-not-contains)
-   3.3 [equals](#33-equals)
-   3.4 [not-equals](#34-not-equals)
-   3.5 [match](#35-match)
-   3.6 [jq](#36-jq)
-   3.7 [or](#37-or)
-   3.8 [and](#38-and)
-   3.9 [nested](#39-nested)
-   3.10 [exists](#310-exists)
-   3.11 [not-exists](#311-not-exists)
-4. [Action nodes](#4-action-nodes)
-   4.1 [delete (text)](#41-delete-text)
-   4.2 [replace (text)](#42-replace-text)
-   4.3 [add (text)](#43-add-text)
-   4.4 [replace (JSON)](#44-replace-json)
-   4.5 [delete-file](#45-delete-file)
-   4.6 [code](#46-code)
-   4.7 [request](#47-request)
-5. [Placeholders](#5-placeholders)
-6. [matched_content](#6-matched_content)
-7. [Complete examples](#7-complete-examples)
-
----
-
 ## 1. File structure
 
 A rules file must have a `rules` key containing a list of rule objects.

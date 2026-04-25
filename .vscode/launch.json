@@ -6,11 +6,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "src/warden/cli.py",
-            "console": "integratedTerminal",
-            "args": [
-                "-r",
-                "docs/rule-test/rule.yml"
-            ]
+            "console": "integratedTerminal"
         }
     ]
 }
