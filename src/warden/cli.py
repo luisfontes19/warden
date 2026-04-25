@@ -240,7 +240,7 @@ def _start_refresh_thread(engine: RuleEngine, observer) -> threading.Thread | No
         while not stop_event.wait(refresh_interval * 60):
             logging.info("Refreshing policy and rules (every %d min)", refresh_interval)
             try:
-                Configs.instance.policyHandler.init()
+                Configs.load_configs()
                 engine.reload()
 
                 new_files = engine.monitoring_files()

@@ -1,0 +1,11 @@
+version: 1
+rules:
+  - id: disable-debug-mode
+    description: Sets debug to false if it is currently true
+    file: "dummy"
+    filetype: json
+    patterns:
+      - jq: '.debug == true'
+    actions:
+      - replace:
+          jq: '.debug = false'

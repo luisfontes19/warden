@@ -1,0 +1,9 @@
+{
+  "server": {
+    "name": "api",
+    "config": {
+      "host": "api.production.internal",
+      "port": 3000
+    }
+  }
+}

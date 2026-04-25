@@ -1,0 +1,7 @@
+{
+  "protocol": "https",
+  "ssl": true,
+  "auth": "required",
+  "exposed": false,
+  "port": 80
+}

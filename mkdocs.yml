@@ -16,6 +16,7 @@ theme:
 nav:
   - Home: index.md
   - Getting Started: tutorial.md
+  - Examples: examples.md
   - Rules Reference: rules.md
   - Bundle Signing: bundle.md
   - MDM Configuration: mdm.md

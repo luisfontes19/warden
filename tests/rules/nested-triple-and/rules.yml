@@ -1,0 +1,17 @@
+version: 1
+rules:
+  - id: fix-fully-insecure-server
+    description: Fixes a server only when ALL four insecure flags are simultaneously set
+    file: "dummy"
+    filetype: json
+    patterns:
+      - and:
+          - and:
+              - and:
+                  - jq: '.protocol == "http"'
+                  - jq: '.ssl == false'
+              - jq: '.auth == "none"'
+          - jq: '.exposed == true'
+    actions:
+      - replace:
+          jq: '.protocol = "https" | .ssl = true | .auth = "required" | .exposed = false'

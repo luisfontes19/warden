@@ -1,0 +1,11 @@
+version: 1
+rules:
+  - id: enforce-node-version
+    description: Ensures engines.node is set to >=20
+    file: "dummy"
+    filetype: json
+    patterns:
+      - jq: '.engines.node != ">=20"'
+    actions:
+      - replace:
+          jq: '.engines.node = ">=20"'

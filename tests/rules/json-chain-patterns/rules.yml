@@ -1,0 +1,12 @@
+version: 1
+rules:
+  - id: enforce-production-env
+    description: Sets env to production when the key exists but is not already production
+    file: "dummy"
+    filetype: json
+    patterns:
+      - jq: 'has("env")'
+      - jq: '.env != "production"'
+    actions:
+      - replace:
+          jq: '.env = "production"'

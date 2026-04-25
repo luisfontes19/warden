@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: remove-todo-prefix
+    description: Strips the "TODO:" prefix from lines, leaving the rest of the text
+    file: "dummy"
+    filetype: text
+    patterns:
+      - contains: "TODO: "
+    actions:
+      - delete:

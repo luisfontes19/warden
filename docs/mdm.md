@@ -1,7 +1,8 @@
-# Warden — MDM Management Guide
+# Warden — MDM Configuration & Bundle Signing
 
-This guide covers how to configure and manage Warden across your organization
-using managed policies (MDM).
+This guide covers everything an administrator needs to deploy Warden to a fleet:
+configuring the managed policy, creating signed rule bundles, and deploying them
+securely.
 
 For the rule syntax itself, see [rules.md](rules.md).
 
@@ -9,83 +10,62 @@ For the rule syntax itself, see [rules.md](rules.md).
 
 ## 1. Overview
 
-Warden can be centrally configured through **managed policies**. This allows an
-organization to push rules and settings to all endpoints without requiring
-manual configuration on each machine.
+Warden reads its configuration from a **managed policy** — a file or profile
+pushed to endpoints by your MDM solution (Jamf, Kandji, Mosyle, Fleet, Ansible,
+etc.). The policy tells Warden where to fetch rules, which security features to
+enable, and how often to refresh.
 
-The policy tells Warden:
-- **Where** to fetch rules from (a URL to a zip file, inline base64 rules, or both).
-- **Whether** Python-based code rules are allowed.
-- **How often** to pull updated rules.
+There are two ways to deliver rules to endpoints:
+
+| Method | Description |
+|---|---|
+| **`rules-url`** | Warden downloads a signed zip bundle from a URL you host. Easy to update — push a new zip without redeploying the policy. |
+| **`rules` (inline)** | Rules are base64-encoded directly in the policy. No hosting required. Good for a small, stable set of baseline rules. |
+
+You can use both together: inline rules provide a guaranteed baseline, while
+remote rules add dynamic policies that can be updated independently.
 
 ---
 
-## 2. Installation & deployment
+## 2. Configuration parameters
 
-<!-- TODO: Document installation and deployment steps -->
-
----
-
-## 3. Configuration parameters
-
-### 3.1 `rules-url`
+### `rules-url`
 
 | | |
 |---|---|
-| **Type** | `string` |
+| **Type** | `string` (URL) |
 | **Required** | No |
-| **Default** | *none* |
 
-A publicly accessible URL pointing to a **zip file** containing rule files
-(`.yml`). The zip can contain nested directories for organization — Warden will
-extract and load all `.yml` files found inside.
-
-Warden downloads and extracts the zip into a local directory, replacing any
-previously downloaded rules on each fetch.
+A URL pointing to a **zip file** containing signed rule files. Warden downloads
+and extracts the zip on startup, replacing any previously downloaded rules.
+If `bundle-signing-public-key` is set, the bundle must pass signature
+verification before any rules are loaded.
 
 ```
-https://example.com/warden-rules/latest.zip
+https://assets.example.com/warden/rules-latest.zip
 ```
 
-### 3.2 `rules` (inline rules)
+### `rules` (inline rules)
 
 | | |
 |---|---|
 | **Type** | `array of strings` |
 | **Required** | No |
-| **Default** | *none* |
 
 An array where **each entry is the full content of a rule YAML file, base64-encoded**.
+Inline rules are decoded on every Warden startup and loaded directly — no
+signature verification applies to them, since they are part of the managed
+policy itself and therefore already under MDM control.
 
-This is useful for shipping a set of default rules directly in the managed
-policy without needing to host a zip file. Warden decodes each entry and writes
-it as a `.yml` file into the policy rules directory.
-
-**Example — encoding a rule:**
-
-Given a rule file:
-
-```yaml
-version: 1
-rules:
-  - id: block-debug
-    file: "**/*.json"
-    patterns:
-      - contains: "DEBUG"
-    actions:
-      - delete: "DEBUG"
-```
-
-Base64-encode its content:
+To encode a rule file:
 
 ```bash
-base64 < rule.yml
+base64 < my-rule.yml
 ```
 
-Then add the resulting string as an entry in the `rules` array in your managed
-policy.
+Paste the resulting string as an entry in the `rules` array.
 
-### 3.3 `allow-code-rules`
+### `allow-code-rules`
 
 | | |
 |---|---|
@@ -93,15 +73,16 @@ policy.
 | **Required** | No |
 | **Default** | `false` |
 
-Controls whether rules are permitted to use the `code` action keyword to execute
-arbitrary Python scripts. When set to `false` (the default), any rule containing
-a `code` action is ignored.
+Controls whether rules may use the `code` action to execute Python scripts on
+the endpoint. Disabled by default. Only enable this if you fully trust the
+rules being delivered — code rules run with the same permissions as the Warden
+process.
 
-> **Security note:** Only enable this if you fully trust the rules being
-> delivered to the endpoint. Code rules can execute arbitrary Python with the
-> same permissions as the Warden process.
+When `rules-url` is in use, any Python handler referenced by a `code` action is
+also verified against the bundle signature before execution. A missing or
+tampered handler is blocked regardless of this setting.
 
-### 3.4 `refresh-interval`
+### `refresh-interval`
 
 | | |
 |---|---|
@@ -109,49 +90,63 @@ a `code` action is ignored.
 | **Required** | No |
 | **Default** | `0` (disabled) |
 
-The interval, in **minutes**, at which Warden re-downloads rules from
-`rules-url`. When set to `0` or omitted, Warden only fetches rules once at
-startup.
+How often, in minutes, Warden re-downloads rules from `rules-url`. When `0` or
+omitted, Warden fetches rules once at startup. Set to `30` or `60` to get
+near-real-time policy updates without redeploying the MDM profile.
 
-### 3.5 `bundle-signing-public-key`
+### `bundle-signing-public-key`
 
 | | |
 |---|---|
 | **Type** | `string` (base64-encoded Ed25519 public key) |
-| **Required** | Yes, when `rules-url` is set |
-| **Default** | *none* |
+| **Required** | Required when `rules-url` is set |
 
-The Ed25519 public key used to verify signed rule bundles, encoded as base64.
-Warden will refuse to start if `rules-url` is configured without this key.
+The public key used to verify signed rule bundles. Generate a key pair with
+`warden bundle keygen` — the output prints the public key in the correct format
+for this field. See [Signing workflow](#4-bundle-signing-workflow) below.
 
-Generate a key pair with `warden bundle keygen` — the public key is printed to
-stdout in the correct format. See [bundle.md](bundle.md) for the full signing
-workflow.
+When set, Warden verifies the bundle before loading any rules:
 
-### 3.6 `bundle-error-url`
+1. Checks the bundle's **manifest checksum** — an Ed25519 signature over the
+   entire file list, proving the manifest itself has not been tampered with.
+2. Verifies the **signature of each rule file** individually.
+3. Verifies the **signature of any Python handler** before executing it.
+
+If any verification step fails, Warden loads no rules from that bundle and
+reports the failure to `bundle-error-url` (if configured).
+
+> Warden will refuse to start if `rules-url` is set without a
+> `bundle-signing-public-key`.
+
+### `bundle-error-url`
 
 | | |
 |---|---|
 | **Type** | `string` (URL) |
 | **Required** | No |
-| **Default** | *none* |
 
-A URL that receives a POST request whenever bundle signature verification fails.
-Use this to alert your security team when an endpoint detects a tampered or
-unsigned bundle. The payload is:
+A URL that receives a POST request whenever bundle verification fails on an
+endpoint. Use this to alert your security team in real time when a tampered or
+unsigned bundle is detected.
+
+The POST body is:
 
 ```json
 {
-  "error": "<description of the failure>",
+  "error": "<description of the specific failure>",
   "source": "warden-bundle-verification"
 }
 ```
 
 Point this at a Slack webhook, PagerDuty event endpoint, or any SIEM ingest URL.
+Each failure produces a separate POST with a specific error message (missing
+file, invalid signature, etc.).
 
 ---
 
-## 4. macOS — Managed profile (.mobileconfig)
+## 3. Platform configuration
+
+### macOS — Managed profile
 
 On macOS, Warden reads managed preferences from:
 
@@ -159,12 +154,7 @@ On macOS, Warden reads managed preferences from:
 /Library/Managed Preferences/com.thesecurityvault.warden.plist
 ```
 
-This plist is populated by deploying a `.mobileconfig` profile through your MDM
-solution (Jamf, Kandji, Mosyle, Fleet, etc.).
-
-A reference profile is available at [`Warden.mobileconfig`](Warden.mobileconfig).
-
-### Minimal example
+Deploy a `.mobileconfig` profile through your MDM solution:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -185,7 +175,7 @@ A reference profile is available at [`Warden.mobileconfig`](Warden.mobileconfig)
               <key>mcx_preference_settings</key>
               <dict>
                 <key>rules-url</key>
-                <string>https://example.com/rules.zip</string>
+                <string>https://assets.example.com/warden/rules-latest.zip</string>
                 <key>rules</key>
                 <array>
                   <string>BASE64_ENCODED_RULE_HERE</string>
@@ -231,21 +221,17 @@ A reference profile is available at [`Warden.mobileconfig`](Warden.mobileconfig)
 </plist>
 ```
 
----
+### Linux — Policy file
 
-## 5. Linux — Policy file
-
-On Linux, Warden reads the policy from a JSON file at:
+On Linux, Warden reads the policy from:
 
 ```
 /etc/warden/policy.json
 ```
 
-### Example
-
 ```json
 {
-  "rules-url": "https://example.com/rules.zip",
+  "rules-url": "https://assets.example.com/warden/rules-latest.zip",
   "rules": [
     "BASE64_ENCODED_RULE_HERE"
   ],
@@ -257,19 +243,174 @@ On Linux, Warden reads the policy from a JSON file at:
 ```
 
 Deploy this file through your configuration management tool (Ansible, Puppet,
-Chef, etc.) or any MDM that supports Linux.
+Chef, etc.) or any MDM that supports Linux file management.
 
 ---
 
-## 6. Rules delivery strategies
+## 4. Bundle signing workflow
 
-You can combine `rules-url` and inline `rules` to suit your needs:
+Signing a bundle cryptographically proves that the rules on an endpoint came
+from your security team and have not been modified in transit or on the
+delivery server.
 
-| Strategy | `rules-url` | `rules` (inline) | Use case |
+Warden uses **Ed25519** signatures. The private key stays on the admin machine
+that builds bundles; only the public key is distributed via MDM.
+
+### Step 1 — Generate a key pair (once)
+
+Run this on the admin machine that will sign bundles:
+
+```bash
+warden bundle keygen
+```
+
+Output:
+
+```
+Private key saved to: /root/.warden/key.ed25519
+Public key saved to:  /root/.warden/key.ed25519.pub
+
+Public key (add to MDM policy as 'bundle-signing-public-key'):
+  <base64-encoded public key>
+
+Warning: 'bundle-error-url' is not configured in MDM policy.
+Configure it so agents can report bundle verification failures.
+```
+
+**Key security:**
+
+- The private key is written with mode `0o600` (owner-readable only).
+- **Never commit or share** the private key. Store it in a secrets manager
+  (1Password, Vault, etc.) and check it out only when signing a new bundle.
+- Only the base64 public key value is added to the MDM policy.
+
+Options:
+
+| Flag | Description |
+|---|---|
+| `--output PATH` | Save the private key to a custom path |
+| `--no-save` | Print the public key without writing the private key to disk |
+
+### Step 2 — Build and sign a bundle
+
+Organise your rules in a folder:
+
+```
+my-rules/
+  block-debug.yml
+  approved-mcps.yml
+  cleanup.py          ← Python handler (if using code actions)
+```
+
+> **Note:** Files whose names begin with `.` (dotfiles such as `.gitignore` or
+> `.DS_Store`) are automatically excluded from the bundle — they are neither
+> signed nor included in the zip archive.
+
+Run:
+
+```bash
+warden bundle create --rules-folder my-rules/ --output my-rules.zip
+```
+
+This:
+
+1. Signs every non-dotfile in `my-rules/` with your private key.
+2. Computes a **manifest checksum** — an Ed25519 signature over the entire file
+   list — and writes it to `my-rules/signatures.json`.
+3. Zips `my-rules/` (including `signatures.json`) to `my-rules.zip`.
+
+Options:
+
+| Flag | Description |
+|---|---|
+| `--rules-folder PATH` | *(required)* Folder containing rules to sign |
+| `--key PATH` | Use a private key at a custom path (default: `~/.warden/key.ed25519`) |
+| `--output PATH` | *(required)* Destination zip file |
+
+### Step 3 — Host the bundle
+
+Upload `my-rules.zip` to any HTTP server your endpoints can reach:
+
+```
+https://assets.example.com/warden/my-rules.zip
+```
+
+Set `rules-url` in the MDM policy to this URL. That's all — Warden downloads
+and verifies the bundle automatically on startup (and on every
+`refresh-interval` cycle if set).
+
+### How verification works on the endpoint
+
+When Warden downloads and extracts a bundle, it verifies it in this order:
+
+1. **Manifest checksum** — verifies the Ed25519 signature over the complete
+   file list in `signatures.json`. If this fails, the entire bundle is rejected
+   immediately and an error is reported.
+2. **Per-file signatures** — each rule file (`.yml`) and Python handler (`.py`)
+   listed in the manifest is verified individually. Files with an invalid
+   signature are skipped; valid ones are loaded.
+3. **Missing files** — if a file listed in the manifest is absent from the
+   extracted bundle, it is reported as an error.
+
+Any failure triggers a POST to `bundle-error-url` with a specific error
+message identifying exactly what went wrong.
+
+### End-to-end flow
+
+```
+Admin machine                          Endpoint (Warden agent)
+─────────────────────────────          ────────────────────────────────────────
+
+1. warden bundle keygen
+   → key.ed25519 (private)
+   → <pub_b64> (public key)
+
+2. Add <pub_b64> to MDM policy
+   as bundle-signing-public-key
+
+3. Edit rules in my-rules/
+
+4. warden bundle create \
+       --rules-folder my-rules/ \
+       --output my-rules.zip
+   → signatures.json written
+   → my-rules.zip created
+
+5. Upload my-rules.zip to
+   https://assets.example.com/
+   warden/my-rules.zip
+                                        6. Warden starts, reads MDM policy:
+                                           rules-url → downloads my-rules.zip
+                                           bundle-signing-public-key → stored
+
+                                        7. Warden extracts zip, loads
+                                           signatures.json
+
+                                        8. Verifies manifest checksum
+                                           ✓ valid → proceed
+                                           ✗ invalid → reject bundle + report
+
+                                        9. For each .yml rule file:
+                                           verify signature
+                                           ✓ valid → load rule
+                                           ✗ invalid/missing → skip + report
+
+                                       10. For each code: handler (if triggered):
+                                           verify .py signature
+                                           ✓ valid → execute
+                                           ✗ invalid → block + report
+```
+
+---
+
+## 5. Rules delivery strategies
+
+| Strategy | `rules-url` | `rules` (inline) | When to use |
 |---|---|---|---|
-| **Remote only** | Set | Empty | All rules managed in a central repo, downloaded as a zip. Easy to update without redeploying the profile. |
-| **Inline only** | Empty | Populated | Rules baked into the managed policy. No external hosting needed. Good for a small, stable set of default rules. |
-| **Hybrid** | Set | Populated | Inline rules provide a baseline that is always present. Remote rules add or override for more dynamic policies. |
+| **Remote only** | Set | Empty | Rules managed in a central repo, downloaded as a zip. Update policies without redeploying the MDM profile. |
+| **Inline only** | Empty | Populated | Rules baked into the managed policy. No hosting required. Good for a small, stable set. |
+| **Hybrid** | Set | Populated | Inline rules provide a guaranteed baseline. Remote rules add dynamic policies. The two sets are merged. |
 
-> **Tip:** Inline rules are extracted on every Warden startup. Remote rules are
-> fetched at startup and then again every `refresh-interval` minutes (if set).
+> Inline rules are loaded on every Warden startup. Remote rules are fetched at
+> startup and again every `refresh-interval` minutes if set. Inline rules do
+> not require signing — they are part of the MDM policy itself.

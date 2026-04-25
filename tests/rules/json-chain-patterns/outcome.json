@@ -1,0 +1,5 @@
+{
+  "env": "production",
+  "port": 3000,
+  "log_level": "debug"
+}

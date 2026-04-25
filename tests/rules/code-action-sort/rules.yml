@@ -1,0 +1,8 @@
+version: 1
+rules:
+  - id: sort-and-deduplicate-lines
+    description: Sorts and deduplicates lines in the file using a Python handler
+    file: "dummy"
+    filetype: text
+    actions:
+      - code: code.py

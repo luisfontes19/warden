@@ -1,0 +1,11 @@
+version: 1
+rules:
+  - id: remove-allow-all-commands
+    description: Removes the allowAllCommands flag to restore permission prompts
+    file: "dummy"
+    filetype: json
+    patterns:
+      - jq: '.allowAllCommands == true'
+    actions:
+      - replace:
+          jq: 'del(.allowAllCommands)'

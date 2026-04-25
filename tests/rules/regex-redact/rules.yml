@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: redact-aws-key
+    description: Redacts AWS access key patterns (AKIA...)
+    file: "dummy"
+    filetype: text
+    patterns:
+      - match: "AKIA[0-9A-Z]{16}"
+    actions:
+      - replace: "REDACTED"

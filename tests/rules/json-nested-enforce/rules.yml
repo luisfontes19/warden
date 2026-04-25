@@ -1,0 +1,13 @@
+version: 1
+rules:
+  - id: enforce-production-db-host
+    description: Replaces localhost database host with the production hostname
+    file: "dummy"
+    filetype: json
+    patterns:
+      - nested:
+          - jq: '.database.host'
+          - equals: "localhost"
+    actions:
+      - replace:
+          jq: '.database.host = "db.production.internal"'

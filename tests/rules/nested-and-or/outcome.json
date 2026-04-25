@@ -1,0 +1,6 @@
+{
+  "role": "admin",
+  "auth": "required",
+  "bypass": false,
+  "port": 8080
+}

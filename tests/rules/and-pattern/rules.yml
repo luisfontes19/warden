@@ -1,0 +1,13 @@
+version: 1
+rules:
+  - id: fix-insecure-test-config
+    description: Resets auth and mode only when both are simultaneously in insecure test state
+    file: "dummy"
+    filetype: json
+    patterns:
+      - and:
+          - jq: '.mode == "test"'
+          - jq: '.auth == "disabled"'
+    actions:
+      - replace:
+          jq: '.auth = "required" | .mode = "production"'

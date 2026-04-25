@@ -546,7 +546,7 @@ Action fields that accept strings can contain **placeholders** using the
 `${{…}}` syntax (Jinja2 under the hood). Placeholders are resolved at
 execution time with data from the current match.
 
-### Available variables
+### 5.1 Available variables
 
 | Variable          | Description |
 |-------------------|-------------|
@@ -556,13 +556,13 @@ execution time with data from the current match.
 | `file_content`    | The full file content (parsed object for JSON, string for text). |
 | `matches`         | List of all `Match` objects. Each has `.rule_id`, `.description`, `.file`, `.matched_content`, `.file_content`. |
 
-### Available functions
+### 5.2 Available functions
 
 | Function    | Description |
 |-------------|-------------|
 | `json(val)` | Serialise any value to a JSON string. Works with `matches`, a single `Match`, or any other value. |
 
-### Examples
+### 5.3 Examples
 
 ```yaml
 # Simple string interpolation
@@ -609,123 +609,4 @@ what each pattern sets it to:
 | `exists`     | The file path as a string                      |
 | `not-exists` | The file path as a string                      |
 
----
-
-## 7. Complete examples
-
-### Detect and remove a blacklisted word in a text file
-
-```yaml
-version: 1
-rules:
-  - id: remove-blacklisted-words
-    description: Removes the word "pariatur" from text files
-    file:
-      - docs/draft.txt
-      - notes/ideas.txt
-    filetype: text
-    patterns:
-      - or:
-          - contains: pariatur
-          - contains: mollit
-    actions:
-      - delete:
-```
-
----
-
-### Flag hardcoded secrets in any config file
-
-```yaml
-version: 1
-rules:
-  - id: no-hardcoded-secrets
-    description: Detects AWS-style access keys
-    file: config/app.env
-    filetype: text
-    patterns:
-      - match: "AKIA[0-9A-Z]{16}"
-    actions:
-      - replace: "REDACTED_AWS_KEY"
-```
-
----
-
-### Enforce only approved MCP servers (JSON)
-
-```yaml
-version: 1
-rules:
-  - id: approved-mcp-servers-only
-    description: Reports and removes any mcpServer that is not the approved youtube one
-    file:
-      - .cursor/mcp.json
-      - .vscode/mcp.json
-    filetype: json
-    patterns:
-      - jq: |
-          [.mcpServers | to_entries[]
-            | select((.value.args // []) | contains(["github:anaisbetts/mcp-youtube"]) | not)
-            | .key]
-    actions:
-      - replace:
-          jq: |
-            .mcpServers |= with_entries(
-              select(.value.args // [] | contains(["github:anaisbetts/mcp-youtube"]))
-            )
-```
-
----
-
-### Require a minimum node version in package.json
-
-```yaml
-version: 1
-rules:
-  - id: node-version-check
-    description: Fails if engines.node is not set to >=20
-    file: package.json
-    filetype: json
-    patterns:
-      - jq: '.engines.node != ">=20"'
-    actions:
-      - replace:
-          jq: '.engines.node = ">=20"'
-```
-
----
-
-### Chain patterns — extract then validate
-
-Using a list (implicit `and`) to first filter with jq and then assert the result:
-
-```yaml
-version: 1
-rules:
-  - id: production-env-required
-    description: Fails when the env field is missing or not "production"
-    file: config/deploy.json
-    filetype: json
-    patterns:
-      - jq: 'has("env")'          # must have the key
-      - jq: '.env != "production"' # and it must NOT already be production
-    actions:
-      - replace:
-          jq: '.env = "production"'
-```
-
----
-
-### Delete a forbidden config file on sight
-
-```yaml
-version: 1
-rules:
-  - id: remove-forbidden-mcp-config
-    description: Deletes any MCP config file as soon as it appears
-    file: .cursor/mcp.json
-    patterns:
-      - exists:
-    actions:
-      - delete-file:
-```
+For complete worked examples with before/after comparisons, see [examples.md](examples.md).

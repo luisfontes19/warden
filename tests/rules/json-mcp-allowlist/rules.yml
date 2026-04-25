@@ -1,0 +1,17 @@
+version: 1
+rules:
+  - id: mcp-allowlist
+    description: Removes any MCP server not on the approved list (github, postgres)
+    file: "dummy"
+    filetype: json
+    patterns:
+      - jq: |
+          [.mcpServers | to_entries[]
+            | select(.key != "github" and .key != "postgres")
+            | .key] | length > 0
+    actions:
+      - replace:
+          jq: |
+            .mcpServers |= with_entries(
+              select(.key == "github" or .key == "postgres")
+            )

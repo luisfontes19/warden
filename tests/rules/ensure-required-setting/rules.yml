@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: ensure-strict-security
+    description: Appends security=strict if the setting is missing
+    file: "dummy"
+    filetype: text
+    patterns:
+      - not-contains: "security=strict"
+    actions:
+      - add: "security=strict\n"

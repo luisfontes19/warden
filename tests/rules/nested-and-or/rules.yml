@@ -1,0 +1,17 @@
+version: 1
+rules:
+  - id: enforce-secure-role-config
+    description: Fixes dangerous role/auth combinations via OR of AND conditions
+    file: "dummy"
+    filetype: json
+    patterns:
+      - or:
+          - and:
+              - jq: '.role == "admin"'
+              - jq: '.auth == "none"'
+          - and:
+              - jq: '.role == "superuser"'
+              - jq: '.bypass == true'
+    actions:
+      - replace:
+          jq: '.auth = "required" | .bypass = false'

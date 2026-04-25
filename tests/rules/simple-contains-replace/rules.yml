@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: disable-debug
+    description: Replaces debug=true with debug=false
+    file: "dummy"
+    filetype: text
+    patterns:
+      - contains: "debug=true"
+    actions:
+      - replace: "debug=false"

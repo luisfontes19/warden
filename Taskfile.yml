@@ -39,7 +39,7 @@ tasks:
     desc: Start documentation server
     cmds:
 
-      - uv run --group docs mkdocs serve -w docs
+      - uv run --group docs mkdocs serve -w ./docs
 
   servers:mdm:
     desc: Start server for MDM testing
@@ -67,11 +67,6 @@ tasks:
       - echo "Running rule tests..."
       #- uv run pytest tests/rules.test.py -v -s 2>&1
       - uv run python tests/rules.py
-
-  docs:
-    desc: Serve documentation site locally
-    cmds:
-      - uv run --group docs mkdocs serve -w docs
 
   build:
     desc: Build standalone binary with PyInstaller

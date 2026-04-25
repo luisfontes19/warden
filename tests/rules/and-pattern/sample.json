@@ -1,0 +1,5 @@
+{
+  "mode": "test",
+  "auth": "disabled",
+  "port": 8080
+}

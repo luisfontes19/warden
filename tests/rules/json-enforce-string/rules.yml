@@ -1,0 +1,11 @@
+version: 1
+rules:
+  - id: enforce-production-env
+    description: Sets the env field to production if it is anything else
+    file: "dummy"
+    filetype: json
+    patterns:
+      - jq: '.env != "production"'
+    actions:
+      - replace:
+          jq: '.env = "production"'

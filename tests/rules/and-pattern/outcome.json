@@ -1,0 +1,5 @@
+{
+  "mode": "production",
+  "auth": "required",
+  "port": 8080
+}

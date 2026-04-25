@@ -1,18 +1,41 @@
 # Warden
 
-Warden is a file policy enforcement agent. It monitors files for changes and automatically applies rules — keeping config files, secrets, and tool settings compliant with your organization's policies.
+Modern software is full of user-editable configuration files. That flexibility is powerful — but from an administrator's perspective, it creates a gap: you can deploy an application, but you cannot guarantee that users will keep it configured the way your organization requires.
 
-## What it does
+**Warden closes that gap.** It is a policy enforcement agent that runs silently on endpoints, watches specific files for changes, and automatically corrects values that violate your rules — without taking control of the file away from the user.
 
-- Watches files in real time using filesystem events
-- Evaluates rules written in YAML against file contents
-- Applies actions (replace, delete, redact, notify) when a rule matches
-- Supports MDM-managed policies on macOS and Linux
-- Verifies signed rule bundles to prevent tampering
+---
 
-## Quick links
+## The problem Warden solves
 
-- [Getting Started](tutorial.md) — install Warden and write your first rule
-- [Rules Reference](rules.md) — full syntax for patterns and actions
-- [Bundle Signing](bundle.md) — sign and deploy rule bundles via MDM
-- [MDM Configuration](mdm.md) — platform-specific managed policy reference
+Think about tools like Claude Code or VSCode. Each of them stores its configuration in a file that the user can freely edit:
+
+- A user adds an arbitrary MCP server to their Claude config, connecting their AI assistant to an unapproved third-party service.
+- VSCode that doesn't allow administrators to enforce most of the settings.
+
+MDM profiles can lock a config file completely — but that removes user agency and often breaks the tool. Warden takes a different approach: **users keep full control of their settings, and Warden enforces only the values that matter**.
+
+If a user changes a setting Warden is enforcing, Warden detects the change the moment the file is saved and corrects just that value. Everything else the user configured stays intact.
+
+---
+
+## How it works
+
+Warden is driven by **rules** — YAML files that describe:
+
+1. **Which file to watch** — a path, a list of paths, or a regex.
+2. **What to look for** — patterns that match text, JSON values, regex, or jq expressions.
+3. **What to do when a match is found** — correct the value, delete the entry, recreate the file, or send an alert.
+
+Rules are deployed to endpoints through your MDM solution. Warden picks them up automatically, starts watching the target files, and enforces the policies on every save.
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Getting Started](tutorial.md) | Install Warden and write your first rule |
+| [Rule Examples](examples.md) | Practical use-case walkthroughs for common admin scenarios |
+| [Rules Reference](rules.md) | Complete syntax for patterns, actions, and options |
+| [MDM Configuration & Bundle Signing](mdm.md) | Deploy rules to endpoints and sign bundles |

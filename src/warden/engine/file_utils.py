@@ -25,8 +25,10 @@ def load_file(path: Path, filetype: str | None) -> Any:
     return parse_content(path.read_bytes(), resolved)
 
 
-def parse_content(raw: bytes | str, filetype: str) -> Any:
+def parse_content(raw: Any, filetype: str) -> Any:
     if filetype == "json":
+        if not isinstance(raw, (str, bytes, bytearray)):
+            return raw
         return json.loads(raw)
     if filetype == "binary":
         return raw if isinstance(raw, bytes) else raw.encode()

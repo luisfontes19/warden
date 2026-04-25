@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - id: enforce-production-api-host
+    description: Replaces localhost in deeply nested server.config.host via a 3-step jq chain
+    file: "dummy"
+    filetype: json
+    patterns:
+      - nested:
+          - jq: '.server'
+          - jq: '.config'
+          - jq: '.host == "localhost"'
+    actions:
+      - replace:
+          jq: '.server.config.host = "api.production.internal"'
