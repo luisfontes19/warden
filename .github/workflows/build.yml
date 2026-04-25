@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Build binary
+        run: >-
+          uv run --group build pyinstaller src/warden/cli.py
+          --onefile
+          --name warden
+          --paths src
+          --additional-hooks-dir packaging/hooks
+          --clean
+          --noconfirm
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: warden-${{ runner.os }}
+          path: dist/warden*

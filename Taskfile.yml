@@ -74,6 +74,6 @@ tasks:
       - echo "Building standalone binary..."
       - >-
         uv run --group build pyinstaller src/warden/cli.py --onefile --name
-        warden --paths src --additional-hooks-dir packaging/macos/hooks --clean
+        warden --paths src --additional-hooks-dir packaging/hooks --clean
         --noconfirm
       - echo "Build complete. Output at dist/warden"
