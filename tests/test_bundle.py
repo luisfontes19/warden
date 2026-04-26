@@ -7,24 +7,14 @@ from pathlib import Path
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from warden.bundle import (
-    DEFAULT_KEY_PATH,
-    SIGNATURES_FILE,
-    create_bundle,
-    create_signatures_data,
-    generate_keypair,
-    load_private_key,
-    public_key_from_b64,
-    public_key_to_b64,
-    save_private_key,
-    write_signatures,
-)
-from warden.engine.verifier import (
-    load_signatures,
-    post_bundle_error,
-    verify_file,
-    verify_files_checksum,
-)
+from warden.bundle import (DEFAULT_KEY_PATH, create_bundle,
+                           create_signatures_data, generate_keypair,
+                           load_private_key, public_key_from_b64,
+                           public_key_to_b64, save_private_key,
+                           write_signatures)
+from warden.engine.verifier import (SIGNATURES_FILE, load_signatures,
+                                    post_bundle_error, verify_file,
+                                    verify_files_checksum)
 
 # ---------------------------------------------------------------------------
 # Key generation
@@ -75,7 +65,8 @@ class TestKeygen:
 
     def test_load_wrong_key_type_raises(self, tmp_path: Path):
         from cryptography.hazmat.primitives import serialization
-        from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+        from cryptography.hazmat.primitives.asymmetric.x25519 import \
+            X25519PrivateKey
 
         x_key = X25519PrivateKey.generate()
         key_path = tmp_path / "wrong.key"

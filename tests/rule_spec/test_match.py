@@ -1,6 +1,6 @@
-from warden.engine.models import Rule
-
 from tests.rule_spec.conftest import tmp_text
+from warden.engine.models import Rule
+from warden.engine.patterns import RegexMatchResult
 
 
 class TestMatch:
@@ -37,3 +37,39 @@ class TestMatch:
         path = tmp_text("Hello World")
         rule = Rule(rule_id="m6", files=[path], patterns=[{"match": r"(?i)hello"}])
         assert len(rule.evaluate()) == 1
+
+    def test_named_groups_in_matched_content(self):
+        path = tmp_text("version=1.2.3")
+        rule = Rule(rule_id="m7", files=[path], patterns=[{"match": r"(?P<key>version)=(?P<value>[\d.]+)"}])
+        matches = rule.evaluate()
+        assert len(matches) == 1
+        result = matches[0].matched_content
+        assert isinstance(result, RegexMatchResult)
+        assert str(result) == "version=1.2.3"
+        assert result.groups == {"key": "version", "value": "1.2.3"}
+        assert result.group == ["version", "1.2.3"]
+
+    def test_named_groups_replace_action(self):
+        path = tmp_text("version=1.2.3\nother=foo\n")
+        rule = Rule(
+            rule_id="m8",
+            files=[path],
+            patterns=[{"match": r"(?P<key>version)=(?P<value>[\d.]+)"}],
+            actions=[{"replace": "${{ groups.key }}=REDACTED"}],
+        )
+        rule.evaluate()
+        result = rule.apply_actions(rule.evaluate())
+        assert "version=REDACTED" in result
+        assert "1.2.3" not in result
+
+    def test_positional_groups_replace_action(self):
+        path = tmp_text("version=9.9.9\nenv=staging\n")
+        rule = Rule(
+            rule_id="m9",
+            files=[path],
+            patterns=[{"match": r"(version)=([\d.]+)"}],
+            actions=[{"replace": "${{ group[0] }}=REDACTED"}],
+        )
+        result = rule.apply_actions(rule.evaluate())
+        assert "version=REDACTED" in result
+        assert "9.9.9" not in result

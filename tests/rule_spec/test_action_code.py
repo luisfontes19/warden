@@ -2,11 +2,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from warden.engine.actions import ActionResult
-from warden.engine.models import Rule
-
 
 from tests.rule_spec.conftest import tmp_text
+from warden.engine.actions import ActionResult
+from warden.engine.models import Rule
 
 
 class TestActionCodeAllowed:
@@ -14,7 +13,7 @@ class TestActionCodeAllowed:
 
     @pytest.fixture(autouse=True)
     def _allow_code(self):
-        with patch("warden.engine.actions.Configs") as mock:
+        with patch("warden.engine.rules_engine.Configs") as mock:
             mock.instance.allow_code_rules = True
             yield
 
@@ -67,7 +66,7 @@ class TestActionCodeDisabled:
 
     @pytest.fixture(autouse=True)
     def _disallow_code(self):
-        with patch("warden.engine.actions.Configs") as mock:
+        with patch("warden.engine.rules_engine.Configs") as mock:
             mock.instance.allow_code_rules = False
             yield
 

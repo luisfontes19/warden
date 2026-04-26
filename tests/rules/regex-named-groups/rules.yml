@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: redact-version-value
+    description: Redact the value part of version=X.Y.Z, preserving the key
+    file: "dummy"
+    filetype: text
+    patterns:
+      - match: "(?P<key>version)=(?P<value>[\\d.]+)"
+    actions:
+      - replace: "${{ groups.key }}=REDACTED"

@@ -229,7 +229,8 @@ Inverse of `equals`.
 Applies a Python `re.search()` regex to the string representation of the
 content. Matches when the pattern is found.
 
-`matched_content` is set to the **first matched substring**.
+`matched_content` is set to the **first matched substring** (a `RegexMatchResult`
+that behaves like a string but also carries capture groups — see below).
 
 ```yaml
 # Detects any 40-character hex string (e.g. a git SHA hardcoded in config)
@@ -241,6 +242,38 @@ content. Matches when the pattern is found.
 # Case-insensitive flag
 - match: "(?i)password\\s*="
 ```
+
+#### Named and positional capture groups
+
+Standard Python regex capture groups work inside `match` patterns and can be
+referenced in `replace` action values via `${{…}}` template expressions.
+
+| Variable | Type | Description |
+|---|---|---|
+| `${{ match }}` | string | Full matched text |
+| `${{ groups.name }}` | string | Value of named group `(?P<name>…)` |
+| `${{ group[0] }}` | string | Value of the 1st positional group (0-indexed) |
+| `${{ group[1] }}` | string | Value of the 2nd positional group, and so on |
+
+```yaml
+# Preserve the key, redact only the value using a named group
+patterns:
+  - match: "(?P<key>\\w+)=(?P<value>[\\d.]+)"
+actions:
+  - replace: "${{ groups.key }}=REDACTED"
+# "version=1.2.3" → "version=REDACTED"
+
+# Same using a positional group
+patterns:
+  - match: "(\\w+)=([\\d.]+)"
+actions:
+  - replace: "${{ group[0] }}=REDACTED"
+# "version=1.2.3" → "version=REDACTED"
+```
+
+> **Note:** Template expressions in `replace` are only evaluated when the
+> matched content comes from a `match` pattern. Plain string `replace` values
+> work exactly as before for all other pattern types.
 
 ---
 

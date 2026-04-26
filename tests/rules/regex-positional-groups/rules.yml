@@ -1,0 +1,10 @@
+version: 1
+rules:
+  - id: redact-version-positional
+    description: Use positional group[0] to preserve the key and redact only the value
+    file: "dummy"
+    filetype: text
+    patterns:
+      - match: "(version)=([\\d.]+)"
+    actions:
+      - replace: "${{ group[0] }}=REDACTED"

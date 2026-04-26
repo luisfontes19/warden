@@ -120,7 +120,7 @@ class RuleEngine:
         if not folder_path.exists():
             return []
 
-        public_key = Configs.instance.bundle_signing_public_key
+        public_key = self._bundle_signing_public_key or Configs.instance.bundle_signing_public_key
 
         if public_key is None:
             rules: list[Rule] = []

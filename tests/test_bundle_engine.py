@@ -114,6 +114,12 @@ class TestNoSigningKey:
 
 
 class TestWithSigningKey:
+    @pytest.fixture(autouse=True)
+    def _isolated(self, tmp_path: Path):
+        with patch("warden.engine.rules_engine.Configs") as mock_cfg:
+            mock_cfg.instance = _mock_configs(tmp_path)
+            yield
+
     def test_loads_verified_rules(self, tmp_path: Path):
         folder = tmp_path / "rules"
         folder.mkdir()

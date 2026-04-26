@@ -8,7 +8,9 @@ from typing import Any
 import jq
 import requests
 
-from warden.engine.templates import build_template_context, render_value
+from warden.engine.patterns import RegexMatchResult
+from warden.engine.templates import (build_template_context, render_template,
+                                     render_value)
 
 
 class ActionResult(Enum):
@@ -22,15 +24,29 @@ def apply_text_actions(
     file_content: Any, matched_contents: list[Any], actions: list[dict],
 ) -> str:
     content = file_content if file_content is not None else ""
-    needles = [str(n) for n in matched_contents if n is not None]
-    logging.debug("Applying %d text action(s) to %d needle(s)", len(actions), len(needles))
+    logging.debug("Applying %d text action(s) to %d matched content(s)", len(actions), len(matched_contents))
 
     for action in actions:
         [(key, value)] = action.items()
 
         if key in ("delete", "replace"):
-            replacement = "" if key == "delete" else (str(value) if value is not None else "")
-            for needle in needles:
+            for raw in matched_contents:
+                if raw is None:
+                    continue
+                needle = str(raw)
+                if key == "delete":
+                    replacement = ""
+                elif value is None:
+                    replacement = ""
+                elif isinstance(raw, RegexMatchResult) and isinstance(value, str) and "${{" in value:
+                    ctx = {
+                        "match": needle,
+                        "groups": raw.groups,
+                        "group": raw.group,
+                    }
+                    replacement = render_template(value, ctx)
+                else:
+                    replacement = str(value)
                 content = content.replace(needle, replacement)
         elif key == "add":
             content += str(value)

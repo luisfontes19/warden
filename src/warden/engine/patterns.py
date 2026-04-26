@@ -4,9 +4,31 @@ import logging
 import re
 from pathlib import Path
 from typing import Any
-import logging
 
 import jq
+
+
+class RegexMatchResult:
+    """Wraps a regex match, exposing named/positional groups while str()-ing to the full match."""
+
+    def __init__(self, m: re.Match) -> None:
+        self._text = m.group(0)
+        self.groups: dict[str, str] = m.groupdict()
+        self.group: list[str] = list(m.groups())
+
+    def __str__(self) -> str:
+        return self._text
+
+    def __repr__(self) -> str:
+        return repr(self._text)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, RegexMatchResult):
+            return self._text == other._text
+        return self._text == other
+
+    def __hash__(self) -> int:
+        return hash(self._text)
 
 
 
@@ -62,7 +84,9 @@ def _check_existence(content: Any, _value: Any) -> tuple[bool, Any]:
 def _check_regex(content: Any, value: Any) -> tuple[bool, Any]:
     target = content if isinstance(content, str) else str(content)
     m = re.search(value, target)
-    return bool(m), m.group(0) if m else content
+    if not m:
+        return False, content
+    return True, RegexMatchResult(m)
 
 
 _LEAF_MATCHERS["jq"] = _check_jq
