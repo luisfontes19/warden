@@ -1,5 +1,7 @@
 - create more tests for actions
-- create a bundle command
-- Create a script to install the tool as a service
-    - Create an MDM policy to install through the policy
+- Installation for windows
+- Windows mdm policy management
 - Create a new policy config "groups", array of strings. Create the groups field in the rule files as well. If a rule file has the group field, it only runs if the policy groups contain any of those groups
+- Document binary filetype operations
+- native support for yml
+- support for nginx config? (https://github.com/nginxinc/crossplane)

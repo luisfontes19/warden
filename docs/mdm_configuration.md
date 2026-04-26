@@ -192,7 +192,7 @@ On macOS, Warden reads managed preferences from:
 /Library/Managed Preferences/io.github.luisfontes19.warden.plist
 ```
 
-Deploy a `.mobileconfig` profile through your MDM solution. You can start from the sample profile in [packaging/macos/warden.mobileconfig](../packaging/macos/warden.mobileconfig) or the hosted example policy at [github.com/luisfontes19/warden/blob/master/packaging/macos/warden.mobileconfig](https://github.com/luisfontes19/warden/blob/master/packaging/macos/warden.mobileconfig).
+Deploy a `.mobileconfig` profile through your MDM solution. You can start from the sample profile in [github.com/luisfontes19/warden/blob/master/packaging/macos/warden.mobileconfig](https://github.com/luisfontes19/warden/blob/master/packaging/macos/warden.mobileconfig).
 
 > [!WARNING]
 > Do not deploy that sample profile unchanged. The `PayloadIdentifier` and
