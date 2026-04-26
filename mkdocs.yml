@@ -43,6 +43,10 @@ nav:
   - MDM Configuration: mdm_configuration.md
   - FAQ: faq.md
 
+plugins:
+  - search
+  - callouts
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true

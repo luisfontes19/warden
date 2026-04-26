@@ -1,18 +1,18 @@
 :root {
-  --md-primary-fg-color: #f28f00;
-  --md-primary-fg-color--light: #ffad33;
-  --md-primary-fg-color--dark: #c77400;
-  --md-accent-fg-color: #f28f00;
+    --md-primary-fg-color: #f28f00;
+    --md-primary-fg-color--light: #ffad33;
+    --md-primary-fg-color--dark: #c77400;
+    --md-accent-fg-color: #f28f00;
 }
 
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #f28f00;
-  --md-primary-fg-color--light: #ffad33;
-  --md-primary-fg-color--dark: #c77400;
-  --md-accent-fg-color: #f28f00;
+    --md-primary-fg-color: #f28f00;
+    --md-primary-fg-color--light: #ffad33;
+    --md-primary-fg-color--dark: #c77400;
+    --md-accent-fg-color: #f28f00;
 }
 
 .md-header,
 .md-tabs {
-  background-color: #f28f00;
+    background-color: #f28f00;
 }

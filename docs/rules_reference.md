@@ -248,6 +248,9 @@ that behaves like a string but also carries capture groups — see below).
 Standard Python regex capture groups work inside `match` patterns and can be
 referenced in `replace` action values via `${{…}}` template expressions.
 
+For a full end-to-end walkthrough, see
+[examples.md](examples.md#10-rewrite-structured-text-with-capture-groups).
+
 | Variable | Type | Description |
 |---|---|---|
 | `${{ match }}` | string | Full matched text |

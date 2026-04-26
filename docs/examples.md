@@ -321,6 +321,35 @@ updates the original object.
 
 ---
 
+## 10. Rewrite structured text with capture groups
+
+**Scenario:** A config line stores two values in one line. Normalize the order
+without losing either value.
+
+```yaml
+version: 1
+rules:
+  - id: reorder-server-line
+    description: Rewrite server and URL in a standard order
+    file: /etc/myapp/endpoint.conf
+    filetype: text
+    patterns:
+      - match: "server=(?P<name>[^,]+),url=(?P<url>[^\n]+)"
+    actions:
+      - replace: "url=${{ groups.url }},server=${{ groups.name }}"
+```
+
+| Before | After |
+|---|---|
+| `env=prod` | `env=prod` |
+| `server=github,url=https://api.github.com` | `url=https://api.github.com,server=github` |
+| `log=info` | `log=info` |
+
+This example uses **named capture groups** to preserve both extracted values
+while rewriting the string in a normalized format.
+
+---
+
 ## 10. Conditional rule — AND gate
 
 **Scenario:** A config is critically misconfigured only when `mode` is `"test"`

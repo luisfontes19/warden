@@ -1,0 +1,3 @@
+env=prod
+server=github,url=https://api.github.com
+log=info

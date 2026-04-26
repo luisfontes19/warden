@@ -1,0 +1,12 @@
+version: 1
+rules:
+  - id: reorder-server-line
+    description: Use named capture groups to rewrite key/value order while preserving values
+    file: "dummy"
+    filetype: text
+    patterns:
+      - match: "server=(?P<name>[^,]+),url=(?P<url>[^
+
+          ]+)"
+    actions:
+      - replace: "url=${{ groups.url }},server=${{ groups.name }}"

@@ -340,6 +340,18 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-callouts"
+version = "1.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mkdocs" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5a/1b/e20a9930d68f03e62af1d7c571c9b333f6a6f447d094bff9024562b129aa/mkdocs_callouts-1.16.0.tar.gz", hash = "sha256:d3248eb99b7acb00ba6526e183ca58d3f7083fb3cfa1739f74f8377e71002aec", size = 11788, upload-time = "2025-01-15T12:47:11.979Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/70/9f3d3e682333e77a76ab855df63b8ada97c46e142ff30d54299a2e362bea/mkdocs_callouts-1.16.0-py3-none-any.whl", hash = "sha256:01ed1511045d61c05b072e4af42d68ef03a1863b7cfcc582bdbb676f26ffdf62", size = 8601, upload-time = "2025-01-15T12:47:09.938Z" },
+]
+
+[[package]]
 name = "mkdocs-get-deps"
 version = "0.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -675,6 +687,7 @@ dev = [
     { name = "ruff" },
 ]
 docs = [
+    { name = "mkdocs-callouts" },
     { name = "mkdocs-material" },
 ]
 
@@ -695,7 +708,10 @@ dev = [
     { name = "pytest", specifier = ">=9.0.3" },
     { name = "ruff", specifier = ">=0.9" },
 ]
-docs = [{ name = "mkdocs-material", specifier = ">=9.0" }]
+docs = [
+    { name = "mkdocs-callouts", specifier = ">=1.0" },
+    { name = "mkdocs-material", specifier = ">=9.0" },
+]
 
 [[package]]
 name = "watchdog"
