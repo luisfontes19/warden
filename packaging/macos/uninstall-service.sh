@@ -25,6 +25,7 @@ fi
 [[ -f "$PLIST_PATH" ]] && rm -f "$PLIST_PATH" && echo "Removed ${PLIST_PATH}."
 [[ -f "$BINARY_PATH" ]] && rm -f "$BINARY_PATH" && echo "Removed ${BINARY_PATH}."
 [[ -f "$APP_SUPPORT_PATH" ]] && rm -f "$APP_SUPPORT_PATH" && echo "Removed ${APP_SUPPORT_PATH}."
+[[ -f "/etc/newsyslog.d/warden.conf" ]] && rm -f "/etc/newsyslog.d/warden.conf" && echo "Removed newsyslog config."
 
 echo "Warden service uninstalled."
 echo "Note: logs at ${LOG_DIR} were preserved. Remove manually if needed."

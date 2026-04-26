@@ -4,6 +4,16 @@ set -euo pipefail
 PLIST_PATH="/Library/LaunchDaemons/io.github.luisfontes19.warden.plist"
 SERVICE_LABEL="io.github.luisfontes19.warden"
 
+NEWSYSLOG_CONF="/etc/newsyslog.d/warden.conf"
+
+# Install newsyslog rotation config
+cat > "$NEWSYSLOG_CONF" << 'EOF'
+# logfilename                            [owner:group]  mode  count  size   when  flags
+/var/log/warden/warden.log              root:wheel     644   5      1024   *     J
+/var/log/warden/warden.error.log        root:wheel     644   5      1024   *     J
+EOF
+chmod 644 "$NEWSYSLOG_CONF"
+
 # Fix ownership and permissions on installed files
 chown root:admin /usr/local/bin/warden
 chmod 750 /usr/local/bin/warden
