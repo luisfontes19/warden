@@ -4,7 +4,7 @@ This guide covers everything an administrator needs to deploy Warden to a fleet:
 configuring the managed policy, creating signed rule bundles, and deploying them
 securely.
 
-For the rule syntax itself, see [rules.md](rules.md).
+For the rule syntax itself, see [rules_reference.md](rules_reference.md).
 
 ---
 
@@ -168,7 +168,7 @@ On macOS, Warden reads managed preferences from:
 /Library/Managed Preferences/io.github.luisfontes19.warden.plist
 ```
 
-Deploy a `.mobileconfig` profile through your MDM solution. You can find a sample profile in `packaging/macos/warden.mobileconfig`. Check [mdm](mdm.md) for instructions on how to edit and deploy it.
+Deploy a `.mobileconfig` profile through your MDM solution. You can find a sample profile in `packaging/macos/warden.mobileconfig`. Check [mdm](mdm_configuration.md) for instructions on how to edit and deploy it.
 
 Deploy this file through your configuration management tool (Ansible, Puppet,
 Chef, etc.) or any MDM that supports Linux file management.

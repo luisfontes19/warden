@@ -2,7 +2,7 @@
 
 This guide walks you through installing Warden and writing your first rule.
 For practical use-case examples, see [examples.md](examples.md).
-For the full rule syntax, see [rules.md](rules.md).
+For the full rule syntax, see [rules_reference.md](rules_reference.md).
 
 ---
 
@@ -27,7 +27,7 @@ The package:
 **Step 2 — Push the managed configuration profile**
 
 After the package is installed, push a `.mobileconfig` profile containing the
-Warden managed policy (see [MDM Configuration](mdm.md)). This tells Warden
+Warden managed policy (see [MDM Configuration](mdm_configuration.md)). This tells Warden
 where to download rules, which signing key to use, and how often to refresh.
 Warden picks up the policy automatically on the next startup.
 
@@ -89,9 +89,9 @@ Call dentist
 
 In production, Warden is intended to run as a background service configured
 entirely through your MDM solution — no command-line arguments needed. The
-[MDM policy](mdm.md) tells Warden which rules to load (via `rules-url` or
+[MDM policy](mdm_configuration.md) tells Warden which rules to load (via `rules-url` or
 inline `rules`), and Warden starts enforcing them automatically on startup.
-See [MDM Configuration & Bundle Signing](mdm.md) for the full deployment guide.
+See [MDM Configuration & Bundle Signing](mdm_configuration.md) for the full deployment guide.
 
 For local development and testing, you can pass rules directly on the command line.
 
@@ -147,5 +147,5 @@ Test your rules this way before packaging and deploying them to endpoints.
 ## Next steps
 
 - **[Rule Examples](examples.md)** — walkthroughs for MCP enforcement, secret redaction, webhooks, and more.
-- **[Rules Reference](rules.md)** — every pattern type, action, and option.
-- **[MDM Configuration & Bundle Signing](mdm.md)** — deploy rules to your fleet.
+- **[Rules Reference](rules_reference.md)** — every pattern type, action, and option.
+- **[MDM Configuration & Bundle Signing](mdm_configuration.md)** — deploy rules to your fleet.

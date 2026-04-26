@@ -3,7 +3,7 @@
 All examples on this page are validated against real test files. They progress
 from the simplest possible rule to complex multi-condition JSON policies.
 
-For the full pattern and action syntax, see [rules.md](rules.md).
+For the full pattern and action syntax, see [rules_reference.md](rules_reference.md).
 
 ---
 
@@ -527,7 +527,7 @@ rules:
 ```
 
 The `request` action supports `${{placeholder}}` template variables. See
-[rules.md §5](rules.md#5-placeholders) for the full list of available variables.
+[rules_reference.md §5](rules_reference.md#5-placeholders) for the full list of available variables.
 
 The file is **not modified** by a `request` action — use it alongside a
 `replace` or `delete` action in the same rule when you need both remediation and

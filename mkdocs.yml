@@ -15,11 +15,10 @@ theme:
 
 nav:
   - Home: index.md
-  - Getting Started: tutorial.md
+  - Getting Started: getting_started.md
   - Examples: examples.md
-  - Rules Reference: rules.md
-  - Bundle Signing: bundle.md
-  - MDM Configuration: mdm.md
+  - Rules Reference: rules_reference.md
+  - MDM Configuration: mdm_configuration.md
   - FAQ: faq.md
 
 markdown_extensions:

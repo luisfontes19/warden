@@ -28,14 +28,3 @@ Warden is driven by **rules** — YAML files that describe:
 3. **What to do when a match is found** — correct the value, delete the entry, recreate the file, or send an alert.
 
 Rules are deployed to endpoints through your MDM solution. Warden picks them up automatically, starts watching the target files, and enforces the policies on every save.
-
----
-
-## Documentation
-
-| Document | Description |
-|---|---|
-| [Getting Started](tutorial.md) | Install Warden and write your first rule |
-| [Rule Examples](examples.md) | Practical use-case walkthroughs for common admin scenarios |
-| [Rules Reference](rules.md) | Complete syntax for patterns, actions, and options |
-| [MDM Configuration & Bundle Signing](mdm.md) | Deploy rules to endpoints and sign bundles |
