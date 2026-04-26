@@ -4,14 +4,36 @@ docs_dir: docs
 
 theme:
   name: material
+  logo: assets/images/logo.png
+  favicon: assets/images/logo.png
   palette:
-    scheme: slate
-    primary: deep purple
-    accent: purple
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to system preference
   features:
     - navigation.sections
     - navigation.top
     - content.code.copy
+    - navigation.instant
+    - navigation.tracking
+    - toc.follow
+    - search.highlight
+    - search.suggest
 
 nav:
   - Home: index.md
@@ -28,3 +50,6 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - admonition
   - tables
+
+extra_css:
+  - assets/stylesheets/extra.css

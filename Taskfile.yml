@@ -38,8 +38,7 @@ tasks:
   servers:docs:
     desc: Start documentation server
     cmds:
-
-      - uv run --group docs mkdocs serve -w ./docs
+      - uv run --group docs mkdocs serve -w ./docs -w ./mkdocs.yml
 
   servers:mdm:
     desc: Start server for MDM testing
