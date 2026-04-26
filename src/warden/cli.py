@@ -117,12 +117,6 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help=f"Path to save the private key (default: {DEFAULT_KEY_PATH})",
     )
-    keygen_parser.add_argument(
-        "--no-save",
-        action="store_true",
-        default=False,
-        help="Print key info without writing to disk",
-    )
 
     create_parser = bundle_sub.add_parser("create", help="Sign a rules folder and create a zip bundle")
     create_parser.add_argument(
@@ -176,12 +170,11 @@ def _cmd_bundle(args: argparse.Namespace) -> None:
         mlkem_key, pub_der = generate_keypair()
         key_path = Path(args.key_output) if args.key_output else DEFAULT_KEY_PATH
 
-        if not args.no_save:
-            save_private_key(mlkem_key, key_path)
-            print(f"Private key saved to: {key_path}")
-            pub_path = key_path.with_suffix(key_path.suffix + ".pub")
-            save_public_key(pub_der, pub_path)
-            print(f"Public key saved to:  {pub_path}")
+        save_private_key(mlkem_key, key_path)
+        print(f"Private key saved to: {key_path}")
+        pub_path = key_path.with_suffix(key_path.suffix + ".pub")
+        save_public_key(pub_der, pub_path)
+        print(f"Public key saved to:  {pub_path}")
 
         pub_b64 = public_key_to_b64(pub_der)
         print("\nPublic key (add to MDM policy as 'bundle-signing-public-key'):")
