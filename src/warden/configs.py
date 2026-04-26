@@ -21,6 +21,7 @@ class Configs:
         self.policyHandler = policyHandler
 
         self.rules_url = policyHandler.rules_url or None
+        self.rules_url_headers: dict[str, str] | None = policyHandler.rules_url_headers
         self.allow_code_rules = policyHandler.allow_code_rules or os.environ.get("ALLOW_CODE_RULES", "false").lower() == "true"
         self.thread_timeout = policyHandler.thread_timeout or int(os.environ.get("THREAD_TIMEOUT", 30))
         self.refresh_interval = policyHandler.refresh_interval or int(os.environ.get("REFRESH_INTERVAL", 3600))

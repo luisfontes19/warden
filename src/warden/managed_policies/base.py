@@ -18,6 +18,7 @@ class ManagedPolicyHandler(ABC):
     def __init__(self) -> None:
         self.is_managed: bool|bool = False
         self.rules_url: str | None = None
+        self.rules_url_headers: dict[str, str] | None = None
         self.inline_rules: list[str] | None = None
         self.allow_code_rules: bool | None = None
         self.thread_timeout: int | None = None
@@ -82,7 +83,7 @@ class ManagedPolicyHandler(ABC):
         rules_dir.mkdir(parents=True, exist_ok=True)
 
         try:
-            response = requests.get(self.rules_url, timeout=30)
+            response = requests.get(self.rules_url, timeout=30, headers=self.rules_url_headers or {})
             response.raise_for_status()
             zip_data = response.content
         except Exception as exc:

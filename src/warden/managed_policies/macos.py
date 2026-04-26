@@ -22,6 +22,7 @@ class MacOSPolicyHandler(ManagedPolicyHandler):
             with PLIST_PATH.open("rb") as f:
                 content = plistlib.load(f)
                 self.rules_url = content.get("rules-url")
+                self.rules_url_headers = content.get("rules-url-headers")
                 self.inline_rules = content.get("rules")
                 self.allow_code_rules = bool(content.get("allow-code-rules") if content.get("allow-code-rules") is not None else False)
                 self.thread_timeout = int(content.get("thread-timeout", self.thread_timeout))

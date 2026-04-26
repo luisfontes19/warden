@@ -59,6 +59,16 @@ verification before any rules are loaded.
 https://assets.example.com/warden/rules-latest.zip
 ```
 
+### `rules-url-headers`
+
+| | |
+|---|---|
+| **Type** | `object` (key-value string pairs) |
+| **Required** | No |
+
+Additional HTTP headers sent with every request to `rules-url`. Use this when
+the bundle server requires authentication or other request metadata.
+
 ### `rules` (inline rules)
 
 | | |
