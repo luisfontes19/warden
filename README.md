@@ -1,5 +1,9 @@
 # Warden
 
+> [!WARNING]
+> This project is in early stages. Expect bugs, breaking changes, and incomplete documentation. Probably not ready for production use yet. Feedback and contributions are welcome!
+
+
 Warden is a policy enforcement agent for endpoint configuration files. It
 watches specific files for changes and automatically corrects values that
 violate your organization's rules — without locking the file away from the user.
