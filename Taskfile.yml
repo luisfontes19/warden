@@ -45,7 +45,7 @@ tasks:
     desc: Start server for MDM testing
     cmds:
 
-      - "mkdir -p /etc/warden && cp ./data/policies/linux.json
+      - "mkdir -p /etc/warden && cp ./packaging/linux/warden.json
         /etc/warden/policy.json"
       - python3 -m http.server 5555 --directory ./data
 

@@ -20,6 +20,7 @@ nav:
   - Rules Reference: rules.md
   - Bundle Signing: bundle.md
   - MDM Configuration: mdm.md
+  - FAQ: faq.md
 
 markdown_extensions:
   - pymdownx.highlight:

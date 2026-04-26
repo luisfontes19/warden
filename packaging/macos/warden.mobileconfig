@@ -7,7 +7,7 @@
 		<dict>
 			<key>PayloadContent</key>
 			<dict>
-				<key>com.thesecurityvault.warden</key>
+				<key>io.github.luisfontes19.warden</key>
 				<dict>
 					<key>Forced</key>
 					<array>
@@ -30,7 +30,7 @@
 			<key>PayloadDisplayName</key>
 			<string>Warden Settings</string>
 			<key>PayloadIdentifier</key>
-			<string>com.thesecurityvault.warden.settings</string>
+			<string>io.github.luisfontes19.warden.settings</string>
 			<key>PayloadType</key>
 			<string>com.apple.ManagedClient.preferences</string>
 			<key>PayloadUUID</key>
@@ -42,7 +42,7 @@
 	<key>PayloadDisplayName</key>
 	<string>Warden</string>
 	<key>PayloadIdentifier</key>
-	<string>com.thesecurityvault.warden</string>
+	<string>io.github.luisfontes19.warden</string>
 	<key>PayloadScope</key>
 	<string>System</string>
 	<key>PayloadType</key>

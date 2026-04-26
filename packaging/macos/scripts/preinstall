@@ -1,0 +1,15 @@
+#!/bin/bash
+set -euo pipefail
+
+PLIST_PATH="/Library/LaunchDaemons/io.github.luisfontes19.warden.plist"
+SERVICE_LABEL="io.github.luisfontes19.warden"
+LOG_DIR="/var/log/warden"
+
+# Unload existing service if running (handles upgrades)
+if launchctl list | grep -q "$SERVICE_LABEL" 2>/dev/null; then
+    launchctl unload "$PLIST_PATH" 2>/dev/null || true
+fi
+
+# Ensure log directory exists
+mkdir -p "$LOG_DIR"
+chmod 755 "$LOG_DIR"

@@ -27,3 +27,39 @@ jobs:
         with:
           name: warden-${{ runner.os }}
           path: dist/warden*
+
+      - name: Build macOS package
+        if: runner.os == 'macOS'
+        run: |
+          VERSION=$(uv run python -c "import importlib.metadata; print(importlib.metadata.version('Warden'))")
+
+          # Build payload layout: files mirror their final install paths
+          mkdir -p pkg-payload/usr/local/bin
+          mkdir -p pkg-payload/Library/LaunchDaemons
+
+          cp dist/warden pkg-payload/usr/local/bin/warden
+          cp packaging/macos/io.github.luisfontes19.warden.plist pkg-payload/Library/LaunchDaemons/io.github.luisfontes19.warden.plist
+
+          # Make scripts executable
+          chmod +x packaging/macos/scripts/preinstall
+          chmod +x packaging/macos/scripts/postinstall
+
+          pkgbuild \
+            --root pkg-payload \
+            --scripts packaging/macos/scripts \
+            --identifier io.github.luisfontes19.warden \
+            --version "$VERSION" \
+            --install-location / \
+            dist/warden-$VERSION.pkg
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: warden-macOS-pkg
+          path: dist/warden-*.pkg
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: warden-macOS-mobileconfig
+          path: packaging/macos/warden.mobileconfig

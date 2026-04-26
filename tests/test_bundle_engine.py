@@ -18,12 +18,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from cryptography.hazmat.primitives import serialization
 
-from warden.bundle import (
-    create_signatures_data,
-    generate_keypair,
-    public_key_to_b64,
-    write_signatures,
-)
+from warden.bundle import (create_signatures_data, generate_keypair,
+                           public_key_to_b64, write_signatures)
 from warden.engine.rules_engine import RuleEngine, invoke_code_handler
 
 # ---------------------------------------------------------------------------
@@ -118,7 +114,7 @@ class TestWithSigningKey:
     def _isolated(self, tmp_path: Path):
         with patch("warden.engine.rules_engine.Configs") as mock_cfg:
             mock_cfg.instance = _mock_configs(tmp_path)
-            yield
+            yield mock_cfg
 
     def test_loads_verified_rules(self, tmp_path: Path):
         folder = tmp_path / "rules"
@@ -127,29 +123,31 @@ class TestWithSigningKey:
         _write_rule(folder)
         pub_b64 = _sign_folder(folder, priv)
 
-        engine = RuleEngine(folder=str(folder), bundle_signing_public_key=pub_b64)
+        engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 1
 
-    def test_rejects_folder_without_signatures_txt(self, tmp_path: Path):
+    def test_rejects_folder_without_signatures_txt(self, tmp_path: Path, _isolated):
         folder = tmp_path / "rules"
         folder.mkdir()
         _write_rule(folder)
 
         priv, _ = generate_keypair()
-        engine = RuleEngine(folder=str(folder), bundle_signing_public_key=_pub_b64(priv))
+        _isolated.instance.bundle_signing_public_key = _pub_b64(priv)
+        engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 0
 
-    def test_rejects_tampered_rule_file(self, tmp_path: Path):
+    def test_rejects_tampered_rule_file(self, tmp_path: Path, _isolated):
         folder = tmp_path / "rules"
         folder.mkdir()
         priv, _ = generate_keypair()
         rule_file = _write_rule(folder)
         pub_b64 = _sign_folder(folder, priv)
+        _isolated.instance.bundle_signing_public_key = pub_b64
 
         # Tamper after signing
         rule_file.write_text(_RULE_CONTENT + "\n  # tampered", encoding="utf-8")
 
-        engine = RuleEngine(folder=str(folder), bundle_signing_public_key=pub_b64)
+        engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 0
 
     def test_loads_only_verified_files_when_some_tampered(self, tmp_path: Path):
@@ -163,12 +161,12 @@ class TestWithSigningKey:
         # Tamper only bad.yml
         (folder / "bad.yml").write_text("version: 1\nrules: []  # tampered")
 
-        engine = RuleEngine(folder=str(folder), bundle_signing_public_key=pub_b64)
+        engine = RuleEngine(folder=str(folder))
         # good.yml has 1 rule; bad.yml is rejected
         assert len(engine.rules) == 1
         assert engine.rules[0].rule_id == "test-rule"
 
-    def test_wrong_public_key_rejects_all(self, tmp_path: Path):
+    def test_wrong_public_key_rejects_all(self, tmp_path: Path, _isolated):
         folder = tmp_path / "rules"
         folder.mkdir()
         priv, _ = generate_keypair()
@@ -178,8 +176,9 @@ class TestWithSigningKey:
         # Use a completely different key for verification
         _, wrong_pub_raw = generate_keypair()
         wrong_pub_b64 = public_key_to_b64(wrong_pub_raw)
+        _isolated.instance.bundle_signing_public_key = wrong_pub_b64
 
-        engine = RuleEngine(folder=str(folder), bundle_signing_public_key=wrong_pub_b64)
+        engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 0
 
     def test_empty_folder_with_key_loads_nothing(self, tmp_path: Path):
@@ -188,17 +187,18 @@ class TestWithSigningKey:
         priv, _ = generate_keypair()
         pub_b64 = _sign_folder(folder, priv)
 
-        engine = RuleEngine(folder=str(folder), bundle_signing_public_key=pub_b64)
+        engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 0
 
-    def test_bundle_signing_key_propagated_to_rules(self, tmp_path: Path):
+    def test_bundle_signing_key_propagated_to_rules(self, tmp_path: Path, _isolated):
         folder = tmp_path / "rules"
         folder.mkdir()
         priv, _ = generate_keypair()
         _write_rule(folder)
         pub_b64 = _sign_folder(folder, priv)
+        _isolated.instance.bundle_signing_public_key = pub_b64
 
-        engine = RuleEngine(folder=str(folder), bundle_signing_public_key=pub_b64)
+        engine = RuleEngine(folder=str(folder))
         assert len(engine.rules) == 1
         assert engine.rules[0].bundle_signing_public_key == pub_b64
 

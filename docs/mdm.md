@@ -10,6 +10,20 @@ For the rule syntax itself, see [rules.md](rules.md).
 
 ## 1. Overview
 
+### Deployment flow
+
+Deploying Warden to a managed fleet requires two sequential MDM pushes:
+
+```
+1. Package push   →  installs the binary + LaunchDaemon, starts the service
+2. Profile push   →  delivers the managed policy (rules URL, signing key, etc.)
+```
+
+Both assets are available on the
+[GitHub Releases page](https://github.com/luisfontes19/warden/releases):
+
+---
+
 Warden reads its configuration from a **managed policy** — a file or profile
 pushed to endpoints by your MDM solution (Jamf, Kandji, Mosyle, Fleet, Ansible,
 etc.). The policy tells Warden where to fetch rules, which security features to
@@ -151,96 +165,10 @@ file, invalid signature, etc.).
 On macOS, Warden reads managed preferences from:
 
 ```
-/Library/Managed Preferences/com.thesecurityvault.warden.plist
+/Library/Managed Preferences/io.github.luisfontes19.warden.plist
 ```
 
-Deploy a `.mobileconfig` profile through your MDM solution:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>PayloadContent</key>
-  <array>
-    <dict>
-      <key>PayloadContent</key>
-      <dict>
-        <key>com.thesecurityvault.warden</key>
-        <dict>
-          <key>Forced</key>
-          <array>
-            <dict>
-              <key>mcx_preference_settings</key>
-              <dict>
-                <key>rules-url</key>
-                <string>https://assets.example.com/warden/rules-latest.zip</string>
-                <key>rules</key>
-                <array>
-                  <string>BASE64_ENCODED_RULE_HERE</string>
-                </array>
-                <key>allow-code-rules</key>
-                <false/>
-                <key>refresh-interval</key>
-                <integer>30</integer>
-                <key>bundle-signing-public-key</key>
-                <string>BASE64_PUBLIC_KEY_HERE</string>
-                <key>bundle-error-url</key>
-                <string>https://alerts.example.com/warden/bundle-error</string>
-              </dict>
-            </dict>
-          </array>
-        </dict>
-      </dict>
-      <key>PayloadType</key>
-      <string>com.apple.ManagedClient.preferences</string>
-      <key>PayloadIdentifier</key>
-      <string>com.thesecurityvault.warden.settings</string>
-      <key>PayloadUUID</key>
-      <string>571D05E1-9E09-4121-A79F-9406E0518CBC</string>
-      <key>PayloadVersion</key>
-      <integer>1</integer>
-    </dict>
-  </array>
-  <key>PayloadDisplayName</key>
-  <string>Warden</string>
-  <key>PayloadIdentifier</key>
-  <string>com.thesecurityvault.warden</string>
-  <key>PayloadScope</key>
-  <string>System</string>
-  <key>PayloadType</key>
-  <string>Configuration</string>
-  <key>PayloadUUID</key>
-  <string>3CC58BF0-C49D-4F33-9DEB-C032A93EC786</string>
-  <key>PayloadVersion</key>
-  <integer>1</integer>
-  <key>TargetDeviceType</key>
-  <integer>5</integer>
-</dict>
-</plist>
-```
-
-### Linux — Policy file
-
-On Linux, Warden reads the policy from:
-
-```
-/etc/warden/policy.json
-```
-
-```json
-{
-  "rules-url": "https://assets.example.com/warden/rules-latest.zip",
-  "rules": [
-    "BASE64_ENCODED_RULE_HERE"
-  ],
-  "allow-code-rules": false,
-  "refresh-interval": 30,
-  "bundle-signing-public-key": "BASE64_PUBLIC_KEY_HERE",
-  "bundle-error-url": "https://alerts.example.com/warden/bundle-error"
-}
-```
+Deploy a `.mobileconfig` profile through your MDM solution. You can find a sample profile in `packaging/macos/warden.mobileconfig`. Check [mdm](mdm.md) for instructions on how to edit and deploy it.
 
 Deploy this file through your configuration management tool (Ansible, Puppet,
 Chef, etc.) or any MDM that supports Linux file management.

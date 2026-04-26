@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+PLIST_PATH="/Library/LaunchDaemons/io.github.luisfontes19.warden.plist"
+SERVICE_LABEL="io.github.luisfontes19.warden"
+
+# Fix ownership and permissions on installed files
+chown root:admin /usr/local/bin/warden
+chmod 750 /usr/local/bin/warden
+chown root:wheel "$PLIST_PATH"
+chmod 644 "$PLIST_PATH"
+
+# Load the service
+launchctl load "$PLIST_PATH"
+
+# Verify it started
+sleep 2
+if launchctl list | grep -q "$SERVICE_LABEL"; then
+    echo "Warden service installed and running."
+else
+    echo "WARNING: Service loaded but not found in launchctl list. Check /var/log/warden/warden.error.log" >&2
+fi

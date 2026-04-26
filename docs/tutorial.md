@@ -8,8 +8,36 @@ For the full rule syntax, see [rules.md](rules.md).
 
 ## 1. Installation
 
-Download the Warden binary for your platform and place it somewhere on your
-`PATH` (e.g. `/usr/local/bin/warden` on macOS/Linux).
+### Fleet deployment (macOS — recommended)
+
+For managed Mac fleets the recommended flow is a two-step MDM push:
+
+**Step 1 — Push the installer package**
+
+Download the latest `warden-<version>.pkg` from the
+[GitHub Releases page](https://github.com/luisfontes19/warden/releases) and
+deploy it to your devices through your MDM solution (Jamf, Kandji, Mosyle,
+Intune, etc.) as a standard Package policy.
+
+The package:
+- Installs the `warden` binary to `/usr/local/bin/warden` (admin-only, `750`)
+- Installs the LaunchDaemon plist to `/Library/LaunchDaemons/`
+- Starts the Warden service automatically
+
+**Step 2 — Push the managed configuration profile**
+
+After the package is installed, push a `.mobileconfig` profile containing the
+Warden managed policy (see [MDM Configuration](mdm.md)). This tells Warden
+where to download rules, which signing key to use, and how often to refresh.
+Warden picks up the policy automatically on the next startup.
+
+---
+
+### Local / development install
+
+Download the binary for your platform from the
+[GitHub Releases page](https://github.com/luisfontes19/warden/releases) and
+place it somewhere on your `PATH` (e.g. `/usr/local/bin/warden`).
 
 Verify the install:
 

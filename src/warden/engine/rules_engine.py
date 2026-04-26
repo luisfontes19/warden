@@ -74,11 +74,9 @@ class RuleEngine:
         self,
         folder: str | None = None,
         rule_files: list[str] | None = None,
-        bundle_signing_public_key: str | None = None,
     ) -> None:
         self.folder = folder
         self.rule_files = rule_files
-        self._bundle_signing_public_key = bundle_signing_public_key
         self.rules: list[Rule] = []
         self._load_all()
 
@@ -120,7 +118,7 @@ class RuleEngine:
         if not folder_path.exists():
             return []
 
-        public_key = self._bundle_signing_public_key or Configs.instance.bundle_signing_public_key
+        public_key = Configs.instance.bundle_signing_public_key
 
         if public_key is None:
             rules: list[Rule] = []
